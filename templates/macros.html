@@ -1,0 +1,40 @@
+{% macro page_header(title, subtitle=None, actions=None) -%}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">PhotoShare</p>
+        <h1>{{ title }}</h1>
+        {% if subtitle %}
+            <p class="page-subtitle">{{ subtitle }}</p>
+        {% endif %}
+    </div>
+    {% if actions %}
+        <div class="page-actions">{{ actions }}</div>
+    {% endif %}
+</header>
+{%- endmacro %}
+
+{% macro photo_card(photo, image_index=0, id_index=1, caption_index=2, link_prefix="/albums/photo/", meta=None) -%}
+<article class="photo-card">
+    <a class="photo-card__image" href="{{ link_prefix }}{{ photo[id_index] }}">
+        <img src="{{ photo[image_index]|photo_data_uri }}" alt="{{ photo[caption_index] or 'Shared photo' }}">
+    </a>
+    <div class="photo-card__body">
+        <p>{{ photo[caption_index] or "Untitled photo" }}</p>
+        {% if meta %}
+            <span class="photo-card__meta">{{ meta }}</span>
+        {% endif %}
+    </div>
+</article>
+{%- endmacro %}
+
+{% macro photo_grid(photos, image_index=0, id_index=1, caption_index=2, link_prefix="/albums/photo/", empty_text="No photos to show yet.") -%}
+{% if photos %}
+    <div class="photo-grid">
+        {% for photo in photos %}
+            {{ photo_card(photo, image_index, id_index, caption_index, link_prefix) }}
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">{{ empty_text }}</div>
+{% endif %}
+{%- endmacro %}

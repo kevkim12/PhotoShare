@@ -1,37 +1,57 @@
-<!-- author ben lawson balawson@bu.edu -->
-<head>
-    {% include "navbar.html" %}
-    <title>Create an account!</title>
-</head>
-{%if suppress == True%}
-<h1> Email already in use! Use another one or <a href="/login">login</a></h1>
+{% extends "base.html" %}
+
+{% block title %}Create Account | PhotoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Account</p>
+        <h1>Create an Account</h1>
+        <p class="page-subtitle">Join PhotoShare to create albums, upload photos, and connect with friends.</p>
+    </div>
+</header>
+
+{% if suppress == True %}
+    <div class="alert">That email is already in use. Try another email or <a href="/login">log in</a>.</div>
 {% endif %}
-    <body>
-        <div class="title">
-            <h1>Enter your information below</h1>
-        </div>
-        <div id="content">
-            <form method="post" action="{{ url_for('register_user') }}">
-                <label for="firstname">*First Name:</label>
-                <input type="text" name="firstname" required><br />
-                <label for="lastname">*Last Name:</label>
-                <input type="text" name="lastname" required><br />
-                <label for="email">*Email:</label>
-                <input type="email" name="email" required/><br />
-                <label for="birthday">*Date of Birth:</label>
-                <input type="date" name="birthday" required><br />
-                <label for="hometown">Hometown:</label>
-                <input type="text" name="hometown"><br />
-                <label for="gender">Gender:</label>
-                <select name="gender">
-                    <option value="null">--not specified--</option>
+
+<section class="panel">
+    <form class="form-card" method="post" action="{{ url_for('register_user') }}">
+        <div class="form-grid">
+            <div class="field">
+                <label for="firstname">First Name</label>
+                <input id="firstname" type="text" name="firstname" required>
+            </div>
+            <div class="field">
+                <label for="lastname">Last Name</label>
+                <input id="lastname" type="text" name="lastname" required>
+            </div>
+            <div class="field">
+                <label for="email">Email</label>
+                <input id="email" type="email" name="email" required>
+            </div>
+            <div class="field">
+                <label for="birthday">Date of Birth</label>
+                <input id="birthday" type="date" name="birthday" required>
+            </div>
+            <div class="field">
+                <label for="hometown">Hometown</label>
+                <input id="hometown" type="text" name="hometown">
+            </div>
+            <div class="field">
+                <label for="gender">Gender</label>
+                <select id="gender" name="gender">
+                    <option value="null">Not specified</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
-                </select><br />
-                <label for="password">*Password:</label>
-                <input type="password" name="password" required/><br />
-                <input type="submit" />
-            </form>
-         </div>
-    </body>
-<a href='/'>Home</a>
+                </select>
+            </div>
+        </div>
+        <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="password" name="password" required>
+        </div>
+        <input type="submit" value="Create Account">
+    </form>
+</section>
+{% endblock %}

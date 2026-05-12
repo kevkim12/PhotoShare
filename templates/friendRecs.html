@@ -1,25 +1,41 @@
-{% include "navbar.html" %}
+{% extends "base.html" %}
 
-  <h1>Friend Recommendations</h1>
-  <p>Here are some users you might want to add as friends:</p>
-  <table>
-    <thead>
-      <tr>
-        <th>Email</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for user in users %}
-        <tr>
-          <td>{{ user }}</td>
-          <td>
-            <form action="{{ url_for('friendRecs') }}" method="POST">
-              <input type="hidden" name="friend_email" value="{{ user }}">
-              <button type="submit">Add</button>
-            </form>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+{% block title %}Friend Recommendations | PhotoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Network</p>
+        <h1>Friend Recommendations</h1>
+        <p class="page-subtitle">Suggested people are ranked by mutual connections.</p>
+    </div>
+</header>
+
+{% if users %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user }}</td>
+                        <td>
+                            <form action="{{ url_for('friendRecs') }}" method="POST">
+                                <input type="hidden" name="friend_email" value="{{ user }}">
+                                <button type="submit">Add Friend</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state">No recommendations are available yet.</div>
+{% endif %}
+{% endblock %}

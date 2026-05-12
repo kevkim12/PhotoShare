@@ -1,16 +1,18 @@
-let tags = [];
-let textValue
-let count = 1
+let tagCount = 1;
+const tagHolder = document.querySelector("#tag-input");
 
 function addTagInput() {
+    if (!tagHolder) {
+        return;
+    }
+
     const tagInput = document.createElement("input");
     tagInput.type = "text";
-    tagInput.name = "tag" + count;
-    tagInput.addEventListener('input', function() {
-        textValue = this.value
-    })
-    tagholder.appendChild(tagInput)
-    count++
-}
+    tagInput.name = "tag" + tagCount;
+    tagInput.id = "tag" + tagCount;
+    tagInput.placeholder = "Tag " + tagCount;
+    tagInput.autocomplete = "off";
 
-const tagholder = document.querySelector("#tag-input")
+    tagHolder.appendChild(tagInput);
+    tagCount += 1;
+}

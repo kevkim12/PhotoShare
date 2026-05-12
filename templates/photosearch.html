@@ -1,27 +1,31 @@
-<!DOCTYPE html>
-{% include "navbar.html" %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Albums</title>
-</head>
-<body>
-      <h2>Browse by Tags</h2>
-      <form action="{{ url_for('search_tag') }}" method="post">
-      <label for="tagSearch">Search tag(s): </label>
-      <input type="text" name="tagSearch">
-      <button type="submit">Search</button>
-      </form>
+{% extends "base.html" %}
+{% from "macros.html" import photo_grid %}
 
-      <ul>
-        {% for photo in photos %}
-        <li>
-            <a href="/albums/photo/{{ photo[1] }}"><img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></a><br>
-            {{photo[2]}}
-        </li><br>
-        {% endfor %}
-    </ul>
-</body>
-</html>
+{% block title %}Search Photos | PhotoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Discovery</p>
+        <h1>Search by Tags</h1>
+        <p class="page-subtitle">Enter one or more tags separated by spaces.</p>
+    </div>
+</header>
+
+<section class="panel section-stack">
+    <form class="search-form" action="{{ url_for('search_tag') }}" method="post">
+        <div class="field">
+            <label for="tagSearch">Tags</label>
+            <input id="tagSearch" type="text" name="tagSearch" placeholder="travel food family" required>
+        </div>
+        <button type="submit">Search Photos</button>
+    </form>
+</section>
+
+{% if photos is defined %}
+    <section class="section-stack">
+        <h2>Results</h2>
+        {{ photo_grid(photos, empty_text="No photos matched those tags.") }}
+    </section>
+{% endif %}
+{% endblock %}

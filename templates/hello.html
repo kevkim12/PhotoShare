@@ -1,40 +1,66 @@
-<!doctype html>
-{% include "navbar.html" %}
-{% if message %}
-  <h4>{{message}}!</h4>
-{% endif %}
-<title>Photoshare</title>
-{% if name %}
-  <h1>Hello {{ name }}!</h1>
-{% endif %}
+{% extends "base.html" %}
+{% from "macros.html" import photo_grid %}
+
+{% block title %}PhotoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">PhotoShare</p>
+        {% if name %}
+            <h1>Hello {{ name }}</h1>
+        {% else %}
+            <h1>Share albums, discover photos, and keep up with friends.</h1>
+        {% endif %}
+        {% if message %}
+            <p class="page-subtitle">{{ message }}</p>
+        {% else %}
+            <p class="page-subtitle">Browse public albums, search by tags, or sign in to upload and manage your own collection.</p>
+        {% endif %}
+    </div>
+    <div class="page-actions">
+        {% if current_user.is_authenticated %}
+            <a class="button" href="/upload">Upload Photo</a>
+            <a class="button button--secondary" href="/userAlbums">Your Albums</a>
+        {% else %}
+            <a class="button" href="/login">Log In</a>
+            <a class="button button--secondary" href="/register">Create Account</a>
+        {% endif %}
+    </div>
+</header>
+
+<div class="dashboard-grid">
+    <section class="panel">
+        <h2>Start Here</h2>
+        <div class="quick-links">
+            <a class="quick-link" href="/albums">Browse Albums <span>Explore the shared gallery.</span></a>
+            <a class="quick-link" href="/photosearch">Photo Search <span>Find photos by one or more tags.</span></a>
+            <a class="quick-link" href="/comments">Comment Search <span>See who is talking about a topic.</span></a>
+            <a class="quick-link" href="/leaderboard">Leaderboard <span>View top contributors and tags.</span></a>
+        </div>
+    </section>
+
+    {% if current_user.is_authenticated %}
+        <aside class="panel">
+            <h2>Your Workspace</h2>
+            <div class="quick-links">
+                <a class="quick-link" href="/userAlbums">Albums <span>Create and organize albums.</span></a>
+                <a class="quick-link" href="/friends">Friends <span>Manage your network.</span></a>
+                <a class="quick-link" href="/photoRecs">Recommendations <span>Discover photos based on your tags.</span></a>
+            </div>
+        </aside>
+    {% else %}
+        <aside class="panel">
+            <h2>Join PhotoShare</h2>
+            <p class="page-subtitle">An account lets you create albums, upload photos, add friends, and get recommendations.</p>
+        </aside>
+    {% endif %}
+</div>
 
 {% if photos %}
-<h2>Here are your photos</h2>
-    <ul>
-    {% for photo in photos %}
-
-        <li>{{photo[2]}}<br>
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
-    {% endfor %}
-    </ul>
+    <section class="section-stack">
+        <h2>Your Photos</h2>
+        {{ photo_grid(photos) }}
+    </section>
 {% endif %}
-
-{% if message is none %}
-  <p>You should <a href='/login'>login!</a></p>
-{% else %}
-  <p> Go to <a href='/profile'>profile?</a></p>
-  <a href="/userAlbums">Your Albums</a>
-  <a href='/friends'>Friends</a>
-{% endif %}
-
-<ul>
-<li><a href='/upload'>Upload a photo</a> </li>
-<li><a href='/logout'>Logout</a></li>
-<li><a href='/'>Home</a></li>
-</ul>
-
-<a href='/albums'>Browse Albums</a>
-<a href='/leaderboard'>Leaderboard</a>
-<a href="/comments">Search Comments</a>
-<a href="/photosearch">Photo Search</a>
-<a href="/photoRecs">You may also like...</a>
+{% endblock %}

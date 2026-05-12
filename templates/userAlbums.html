@@ -1,27 +1,39 @@
-<!DOCTYPE html>
-{% include "navbar.html" %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <form action="{{ url_for('add_album') }}" method="post">
-        <label for="albumname">Make an album:</label>
-        <input type="text" name="albumname"/><br />
-        <button type="submit">Add</button>
-      </form>
-      
+{% extends "base.html" %}
 
-      <a href="{{ url_for('modifyAlbums') }}">Modify Albums</a>
-      
-      <h2>Here are your Albums</h2>
-    <ul>
-        {% for album,id in albums %}
-        <li><a href="/{{ id }}">{{ album }}</a></li>
-        {% endfor %}
-    </ul>
-</body>
-</html>
+{% block title %}Your Albums | PhotoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Library</p>
+        <h1>Your Albums</h1>
+        <p class="page-subtitle">Create a new album or open an existing collection.</p>
+    </div>
+    <div class="page-actions">
+        <a class="button button--secondary" href="{{ url_for('modifyAlbums') }}">Manage Albums</a>
+    </div>
+</header>
+
+<section class="panel section-stack">
+    <form class="search-form" action="{{ url_for('add_album') }}" method="post">
+        <div class="field">
+            <label for="albumname">Album name</label>
+            <input id="albumname" type="text" name="albumname" placeholder="Summer trip" required>
+        </div>
+        <button type="submit">Add Album</button>
+    </form>
+</section>
+
+<section class="section-stack">
+    <h2>Albums</h2>
+    {% if albums %}
+        <ul class="album-list">
+            {% for album, id in albums %}
+                <li><a href="/{{ id }}">{{ album }}</a></li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="empty-state">No albums yet. Create one to start uploading photos.</div>
+    {% endif %}
+</section>
+{% endblock %}

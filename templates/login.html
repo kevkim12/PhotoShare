@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Log In | PhotoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Account</p>
+        <h1>Log In</h1>
+        <p class="page-subtitle">Access your albums, friends, uploads, and recommendations.</p>
+    </div>
+</header>
+
+{% if error %}
+    <div class="alert">{{ error }}</div>
+{% endif %}
+
+<section class="panel">
+    <form class="form-card" action="{{ url_for('login') }}" method="POST">
+        <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" name="email" placeholder="you@example.com" required>
+        </div>
+        <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="password" name="password" required>
+        </div>
+        <div class="action-row">
+            <input type="submit" name="submit" value="Log In">
+            <a class="button button--secondary" href="/register">Create Account</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -1,20 +1,33 @@
-{% include "navbar.html" %}
+{% extends "base.html" %}
 
-<h1>You may also like...</h1>
+{% block title %}Photo Recommendations | PhotoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Discovery</p>
+        <h1>You May Also Like</h1>
+        <p class="page-subtitle">Recommendations are based on tags from your own photos.</p>
+    </div>
+</header>
 
 {% if photos %}
-  {% for i in range(3) %}
-    {% for photo in photos if photo[3] == 3-i %}
-      <div class="row">
-        <div class="col-md-4">
-            <a href="albums/photo/{{ photo[0] }}"><img src='data:image/jpg;base64, {{ base64.b64encode(photo[1]).decode("ascii") }}'/></a><br>
-          <p>{{ photo[2] }}</p>
-          <p>{{ photo[4] }} tag matches</p>
-          
-        </div>
-      </div>
-    {% endfor %}
-  {% endfor %}
+    <div class="photo-grid">
+        {% for i in range(3) %}
+            {% for photo in photos if photo[3] == 3 - i %}
+                <article class="photo-card">
+                    <a class="photo-card__image" href="/albums/photo/{{ photo[0] }}">
+                        <img src="{{ photo[1]|photo_data_uri }}" alt="{{ photo[2] or 'Recommended photo' }}">
+                    </a>
+                    <div class="photo-card__body">
+                        <p>{{ photo[2] or "Untitled photo" }}</p>
+                        <span class="photo-card__meta">{{ photo[4] }} tag matches</span>
+                    </div>
+                </article>
+            {% endfor %}
+        {% endfor %}
+    </div>
 {% else %}
-  <p>There are no photos to recommend.</p>
+    <div class="empty-state">There are no photos to recommend yet.</div>
 {% endif %}
+{% endblock %}

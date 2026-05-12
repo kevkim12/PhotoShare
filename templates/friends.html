@@ -1,25 +1,39 @@
-<!DOCTYPE html>
-{% include "navbar.html" %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Friends List</title>
-</head>
-<body>
-    <form action="{{ url_for('add_friend') }}" method="post">
-        <label for="addfriend">Add new friend</label>
-        <input type="email" placeholder='email' name="addfriend">
-        <button type="submit">Search</button>
+{% extends "base.html" %}
+
+{% block title %}Friends | PhotoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Network</p>
+        <h1>Friends</h1>
+        <p class="page-subtitle">Add friends by email and discover people through recommendations.</p>
+    </div>
+    <div class="page-actions">
+        <a class="button button--secondary" href="{{ url_for('friendRecs') }}">Find Friends</a>
+    </div>
+</header>
+
+<section class="panel section-stack">
+    <form class="search-form" action="{{ url_for('add_friend') }}" method="post">
+        <div class="field">
+            <label for="addfriend">Friend email</label>
+            <input id="addfriend" type="email" placeholder="friend@example.com" name="addfriend" required>
+        </div>
+        <button type="submit">Add Friend</button>
     </form>
-    <h2>Here are your Friends</h2>
-    <ul>
-        {% for friend in friends %}
-        <li>{{ friend }}<br>
-        </li>
-        {% endfor %}
-    </ul>
-    <a href="{{ url_for('friendRecs') }}">Find Friends</a>
-</body>
-</html>
+</section>
+
+<section class="section-stack">
+    <h2>Your Friends</h2>
+    {% if friends %}
+        <ul class="simple-list">
+            {% for friend in friends %}
+                <li>{{ friend }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="empty-state">No friends added yet.</div>
+    {% endif %}
+</section>
+{% endblock %}
