@@ -39,10 +39,6 @@ The app includes a polished responsive interface with shared templates, reusable
 | --- | --- |
 | ![Tag search results for travel photos](docs/screenshots/10-photo-search-results.png) | ![Signed-in profile dashboard](docs/screenshots/12-profile-kevin.png) |
 
-| Photo management |
-| --- |
-| ![Photo management page](docs/screenshots/15-manage-photos.png) |
-
 ## Setup
 
 ### 1. Clone The Repository
