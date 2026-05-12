@@ -1,5 +1,6 @@
 .codex_deps/
 .env
+instance/
 __pycache__/
 *.py[cod]
 server.out.log

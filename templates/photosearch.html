@@ -16,7 +16,7 @@
     <form class="search-form" action="{{ url_for('search_tag') }}" method="post">
         <div class="field">
             <label for="tagSearch">Tags</label>
-            <input id="tagSearch" type="text" name="tagSearch" placeholder="travel food family" required>
+            <input id="tagSearch" type="text" name="tagSearch" value="{{ tag_query or '' }}" placeholder="travel food family" required>
         </div>
         <button type="submit">Search Photos</button>
     </form>

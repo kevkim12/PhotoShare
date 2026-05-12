@@ -12,10 +12,12 @@
 
 import base64
 import os
+import sqlite3
 import flask
 from flask import Flask, g, request, render_template
 from flaskext.mysql import MySQL
 import flask_login
+from pymysql.err import OperationalError as DatabaseOperationalError
 import re
 
 #for getting current date
@@ -31,15 +33,157 @@ app.config['MYSQL_DATABASE_USER'] = os.getenv('MYSQL_DATABASE_USER', 'root')
 app.config['MYSQL_DATABASE_PASSWORD'] = os.getenv('MYSQL_DATABASE_PASSWORD', 'cs460cs460')
 app.config['MYSQL_DATABASE_DB'] = os.getenv('MYSQL_DATABASE_DB', 'photoshare')
 app.config['MYSQL_DATABASE_HOST'] = os.getenv('MYSQL_DATABASE_HOST', 'localhost')
+app.config['DATABASE_BACKEND'] = os.getenv('PHOTOSHARE_DATABASE', 'mysql').lower()
+app.config['SQLITE_DATABASE_PATH'] = os.getenv(
+	'SQLITE_DATABASE_PATH',
+	os.path.join(app.instance_path, 'photoshare.sqlite3')
+)
 mysql.init_app(app)
 
 #begin code used for login
 login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
 
+def initialize_sqlite_schema(db_conn):
+	db_conn.executescript(
+		"""
+		CREATE TABLE IF NOT EXISTS Users (
+			user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+			firstname TEXT NOT NULL,
+			lastname TEXT NOT NULL,
+			password TEXT NOT NULL,
+			gender TEXT,
+			email TEXT UNIQUE NOT NULL,
+			hometown TEXT,
+			birthday DATE NOT NULL,
+			score INTEGER DEFAULT 0
+		);
+
+		CREATE TABLE IF NOT EXISTS Friends (
+			user_id1 INTEGER,
+			user_id2 INTEGER
+		);
+
+		CREATE TABLE IF NOT EXISTS Pictures (
+			picture_id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER,
+			imgdata BLOB,
+			caption TEXT
+		);
+
+		CREATE TABLE IF NOT EXISTS Albums (
+			album_id INTEGER PRIMARY KEY AUTOINCREMENT,
+			date DATE,
+			albumname TEXT,
+			user_id INTEGER
+		);
+
+		CREATE TABLE IF NOT EXISTS Contains (
+			album_id INTEGER,
+			picture_id INTEGER PRIMARY KEY
+		);
+
+		CREATE TABLE IF NOT EXISTS Comments (
+			comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+			date DATE,
+			text TEXT
+		);
+
+		CREATE TABLE IF NOT EXISTS Tag (
+			word TEXT PRIMARY KEY
+		);
+
+		CREATE TABLE IF NOT EXISTS Associate (
+			picture_id INTEGER,
+			word TEXT,
+			PRIMARY KEY (picture_id, word)
+		);
+
+		CREATE TABLE IF NOT EXISTS Has (
+			comment_id INTEGER,
+			picture_id INTEGER,
+			PRIMARY KEY (comment_id, picture_id)
+		);
+
+		CREATE TABLE IF NOT EXISTS Likes (
+			user_id INTEGER,
+			picture_id INTEGER,
+			PRIMARY KEY (user_id, picture_id)
+		);
+
+		CREATE TABLE IF NOT EXISTS Made (
+			user_id INTEGER,
+			comment_id INTEGER,
+			PRIMARY KEY (user_id, comment_id)
+		);
+		"""
+	)
+	db_conn.commit()
+
+def sqlite_sql(sql):
+	return (
+		sql.replace('%s', '?')
+		.replace('INSERT IGNORE INTO', 'INSERT OR IGNORE INTO')
+		.replace('SELECT LAST_INSERT_ID()', 'SELECT last_insert_rowid()')
+	)
+
+class SQLiteCursor:
+	def __init__(self, cursor):
+		self.cursor = cursor
+		self.results = None
+		self.result_index = 0
+
+	def execute(self, sql, params=None):
+		self.results = None
+		self.result_index = 0
+		params = params or ()
+		translated_sql = sqlite_sql(sql)
+		self.cursor.execute(translated_sql, params)
+		if translated_sql.lstrip().upper().startswith('SELECT'):
+			self.results = self.cursor.fetchall()
+			return len(self.results)
+		return self.cursor.rowcount
+
+	def fetchall(self):
+		if self.results is not None:
+			return self.results
+		return self.cursor.fetchall()
+
+	def fetchone(self):
+		if self.results is not None:
+			if self.result_index >= len(self.results):
+				return None
+			row = self.results[self.result_index]
+			self.result_index += 1
+			return row
+		return self.cursor.fetchone()
+
+	@property
+	def lastrowid(self):
+		return self.cursor.lastrowid
+
+class SQLiteConnection:
+	def __init__(self, db_conn):
+		self.db_conn = db_conn
+
+	def cursor(self):
+		return SQLiteCursor(self.db_conn.cursor())
+
+	def commit(self):
+		return self.db_conn.commit()
+
+	def close(self):
+		return self.db_conn.close()
+
 def get_connection():
 	if 'db_conn' not in g:
-		g.db_conn = mysql.connect()
+		if app.config['DATABASE_BACKEND'] == 'sqlite':
+			os.makedirs(app.instance_path, exist_ok=True)
+			sqlite_conn = sqlite3.connect(app.config['SQLITE_DATABASE_PATH'])
+			initialize_sqlite_schema(sqlite_conn)
+			g.db_conn = SQLiteConnection(sqlite_conn)
+		else:
+			g.db_conn = mysql.connect()
 	return g.db_conn
 
 @app.teardown_appcontext
@@ -73,8 +217,13 @@ cursor = CursorProxy()
 def photo_data_uri(photo_blob):
 	if not photo_blob:
 		return ''
+	mime_type = 'image/jpeg'
+	if photo_blob.startswith(b'\x89PNG\r\n\x1a\n'):
+		mime_type = 'image/png'
+	elif photo_blob.startswith(b'GIF87a') or photo_blob.startswith(b'GIF89a'):
+		mime_type = 'image/gif'
 	encoded = base64.b64encode(photo_blob).decode('ascii')
-	return 'data:image/jpeg;base64,{0}'.format(encoded)
+	return 'data:{0};base64,{1}'.format(mime_type, encoded)
 
 def getUserList():
 	cursor = conn.cursor()
@@ -86,7 +235,10 @@ class User(flask_login.UserMixin):
 
 @login_manager.user_loader
 def user_loader(email):
-	users = getUserList()
+	try:
+		users = getUserList()
+	except DatabaseOperationalError:
+		return
 	if not(email) or email not in str(users):
 		return
 	user = User()
@@ -100,7 +252,10 @@ def request_loader(request):
 	email = request.form.get('email')
 	if not email:
 		return
-	users = getUserList()
+	try:
+		users = getUserList()
+	except DatabaseOperationalError:
+		return
 	if email not in str(users):
 		return
 	user = User()
@@ -178,6 +333,14 @@ def logout():
 def unauthorized_handler():
 	return render_template('unauth.html')
 
+@app.errorhandler(DatabaseOperationalError)
+def handle_database_error(error):
+	return render_template('database_error.html'), 503
+
+@app.errorhandler(sqlite3.Error)
+def handle_sqlite_error(error):
+	return render_template('database_error.html'), 503
+
 #you can specify specific methods (GET/POST) in function header instead of inside the functions as seen earlier
 @app.route("/register", methods=['GET'])
 def register():
@@ -208,7 +371,7 @@ def register_user():
 		user.id = email
 		flask_login.login_user(user)
 		login_status = True
-		return render_template('hello.html', name=email, message='Account Created!')
+		return render_template('hello.html', name=firstname, message='Account Created!')
 	else:
 		print("couldn't find all tokens")
 		print('oof')
@@ -230,6 +393,12 @@ def getEmailFromUserID(user_id):
     cursor.execute("SELECT email FROM Users WHERE user_id = %s", (user_id,))
     return cursor.fetchone()[0]
 
+def getDisplayNameFromEmail(email):
+	cursor = conn.cursor()
+	cursor.execute("SELECT firstname FROM Users WHERE email = %s", (email,))
+	result = cursor.fetchone()
+	return result[0] if result else email
+
 def getCommentId(comment):
 	cursor = conn.cursor()
 	cursor.execute("SELECT comment_id FROM Comments WHERE comment_id = %s", (comment,))
@@ -247,7 +416,7 @@ def isEmailUnique(email):
 @app.route('/profile')
 @flask_login.login_required
 def protected():
-	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile")
+	return render_template('hello.html', name=getDisplayNameFromEmail(flask_login.current_user.id), message="Here's your profile")
 
 def get_photo_comments(picture_id):
 	cursor = conn.cursor()
@@ -621,10 +790,14 @@ def display_photosearch():
 def search_tag():
 	tags = request.form.get("tagSearch")
 	tag_split = tags.split()
-	arr = ()
+	arr = []
+	seen_photo_ids = set()
 	for word in tag_split:
-		arr = arr + getTagPhotos(word)
-	return render_template('photosearch.html', photos = arr, base64=base64)
+		for photo in getTagPhotos(word):
+			if photo[1] not in seen_photo_ids:
+				arr.append(photo)
+				seen_photo_ids.add(photo[1])
+	return render_template('photosearch.html', photos=arr, tag_query=tags, base64=base64)
 
 @app.route('/tags/<path:subpath>', methods=['GET'])
 def display_tag_photos(subpath):
