@@ -29,6 +29,20 @@ The app includes a polished responsive interface with shared templates, reusable
 - Photo recommendations based on tag overlap
 - Contributor and popular-tag leaderboards
 
+## Screenshots
+
+| Public home | Photo detail |
+| --- | --- |
+| ![PhotoShare public home page](docs/screenshots/01-home-public.png) | ![Logged-in photo detail page with tags and comments](docs/screenshots/21-logged-in-photo-detail.png) |
+
+| Tag search | Profile dashboard |
+| --- | --- |
+| ![Tag search results for travel photos](docs/screenshots/10-photo-search-results.png) | ![Signed-in profile dashboard](docs/screenshots/12-profile-kevin.png) |
+
+| Photo management |
+| --- |
+| ![Photo management page](docs/screenshots/15-manage-photos.png) |
+
 ## Setup
 
 ### 1. Clone The Repository
