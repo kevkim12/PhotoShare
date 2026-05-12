@@ -1,2 +1,10 @@
-{% include "navbar.html" %}
-<h>Page Locked</h>
+{% extends "base.html" %}
+
+{% block title %}Locked | PhotoShare{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <p class="eyebrow">Locked</p>
+    <h1>This page is not available.</h1>
+</section>
+{% endblock %}

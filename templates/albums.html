@@ -1,18 +1,23 @@
-<!DOCTYPE html>
-{% include "navbar.html" %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Albums</title>
-</head>
-<body>
-      <h2>Browse Albums</h2>
-    <ul>
-        {% for album,id in albums %}
-        <li><a href="/{{ id }}">{{ album }}</a></li>
+{% extends "base.html" %}
+
+{% block title %}Albums | PhotoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Gallery</p>
+        <h1>Browse Albums</h1>
+        <p class="page-subtitle">Open any public album to view the photos inside.</p>
+    </div>
+</header>
+
+{% if albums %}
+    <ul class="album-list">
+        {% for album, id in albums %}
+            <li><a href="/{{ id }}">{{ album }}</a></li>
         {% endfor %}
     </ul>
-</body>
-</html>
+{% else %}
+    <div class="empty-state">No albums have been shared yet.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Database Unavailable | PhotoShare{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <p class="eyebrow">Database</p>
+    <h1>PhotoShare is running, but MySQL is not available.</h1>
+    <p class="page-subtitle">
+        Start MySQL and load the <code>photoshare</code> schema to use accounts, albums, uploads, comments, and likes.
+    </p>
+    <div class="action-row">
+        <a class="button" href="/">Go Home</a>
+        <a class="button button--secondary" href="/register">Try Again</a>
+    </div>
+</section>
+{% endblock %}

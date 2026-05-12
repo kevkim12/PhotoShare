@@ -1,14 +1,34 @@
-{% include "navbar.html" %}
-<h2>Photos</h2>
-<ul>
-    {% for photo in photos %}
-    <li>
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></a><br>
-        {{photo[2]}}
-        <form action="{{ url_for('delete_photo', subpath=album_id) }}" method="post">
-            <input type="hidden" name="picture_id" value="{{photo[1]}}">
-            <button type="submit" name="delete_button">&#128465;</button>
-        </form>
-    </li><br>
-    {% endfor %}
-</ul>
+{% extends "base.html" %}
+
+{% block title %}Manage Photos | PhotoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Library</p>
+        <h1>Manage Photos</h1>
+        <p class="page-subtitle">Review photos in this album and delete any that should be removed.</p>
+    </div>
+</header>
+
+{% if photos %}
+    <div class="photo-grid">
+        {% for photo in photos %}
+            <article class="photo-card">
+                <div class="photo-card__image">
+                    <img src="{{ photo[0]|photo_data_uri }}" alt="{{ photo[2] or 'Shared photo' }}">
+                </div>
+                <div class="photo-card__body">
+                    <p>{{ photo[2] or "Untitled photo" }}</p>
+                    <form action="{{ url_for('delete_photo', subpath=album_id) }}" method="post">
+                        <input type="hidden" name="picture_id" value="{{ photo[1] }}">
+                        <button class="button--danger" type="submit" name="delete_button">Delete Photo</button>
+                    </form>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">This album does not have any photos yet.</div>
+{% endif %}
+{% endblock %}

@@ -1,34 +1,58 @@
-<!DOCTYPE html>
-{% include "navbar.html" %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo</title>
-</head>
-<body>
-    <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0][0]).decode("ascii") }}'/><br>
-    {{photo[0][2]}}
+{% extends "base.html" %}
 
-    <h2>Tags:</h2>
-    {% for tag in tags %}
-        <li><a href="/tags/{{ tag }}">{{ tag }}</a></li>
-    {% endfor %}
+{% block title %}Photo | PhotoShare{% endblock %}
 
-    <h2><a href="{{photo[0][1]}}/likes">Likes - {{totalLikes}}</a></h2>
-    
-    <form action="{{ url_for('add_comment', subpath='photo') }}" method="post">
-        <input type="hidden" name="picture_id" value="{{photo[0][1]}}">
-        <label for="addcomment">Add new comment</label>
-        <input type="text" placeholder='comment' name="addcomment">
-        <button type="submit">Add</button>
-    </form>
+{% block content %}
+{% set current_photo = photo[0] %}
+<div class="photo-detail">
+    <section class="photo-detail__image">
+        <img src="{{ current_photo[0]|photo_data_uri }}" alt="{{ current_photo[2] or 'Shared photo' }}">
+    </section>
 
-    <h2>Comments:</h2>
-    {% for comment in comments %}
-        <li>{{ comment }}<br>
-        </li>
-    {% endfor %}
-</body>
-</html>
+    <aside class="photo-meta">
+        <section class="panel">
+            <p class="eyebrow">Photo</p>
+            <h1>{{ current_photo[2] or "Untitled photo" }}</h1>
+            <a class="button button--secondary" href="/albums/photo/{{ current_photo[1] }}/likes">Likes - {{ totalLikes or 0 }}</a>
+        </section>
+
+        <section class="panel">
+            <h2>Tags</h2>
+            {% if tags %}
+                <ul class="tag-list">
+                    {% for tag in tags %}
+                        <li><a href="/tags/{{ tag }}">{{ tag }}</a></li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="page-subtitle">No tags yet.</p>
+            {% endif %}
+        </section>
+
+        <section class="panel">
+            <h2>Add Comment</h2>
+            <form class="search-form" action="{{ url_for('add_comment', subpath='photo') }}" method="post">
+                <input type="hidden" name="picture_id" value="{{ current_photo[1] }}">
+                <div class="field">
+                    <label for="addcomment">Comment</label>
+                    <input id="addcomment" type="text" placeholder="Write something thoughtful" name="addcomment" required>
+                </div>
+                <button type="submit">Add Comment</button>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h2>Comments</h2>
+            {% if comments %}
+                <ul class="comment-list">
+                    {% for comment in comments %}
+                        <li>{{ comment }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="page-subtitle">No comments yet.</p>
+            {% endif %}
+        </section>
+    </aside>
+</div>
+{% endblock %}

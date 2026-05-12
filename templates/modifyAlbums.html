@@ -1,26 +1,42 @@
-<!DOCTYPE html>
-{% include "navbar.html" %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-      
-    <h2>Modify your albums</h2>
-    <ul>
-        {% for album, id in albums %}
-        <li>
-            <a href="modifyPhoto/{{ id }}">{{ album }}</a> 
-            <span style="cursor: pointer;">
-                <form method="post">
-                    <button type="submit" name="delete_album" value="{{ id }}">🗑️</button>
-                </form>
-            </span>
-        </li>
-        {% endfor %}
-    </ul>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Manage Albums | PhotoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Library</p>
+        <h1>Manage Albums</h1>
+        <p class="page-subtitle">Open an album to manage its photos or remove an album you no longer need.</p>
+    </div>
+</header>
+
+{% if albums %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Album</th>
+                    <th>Photos</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for album, id in albums %}
+                    <tr>
+                        <td>{{ album }}</td>
+                        <td><a class="button button--secondary" href="modifyPhoto/{{ id }}">Manage Photos</a></td>
+                        <td>
+                            <form method="post">
+                                <button class="button--danger" type="submit" name="delete_album" value="{{ id }}">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state">No albums to manage.</div>
+{% endif %}
+{% endblock %}

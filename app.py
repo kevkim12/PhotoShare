@@ -10,37 +10,220 @@
 # see links for further understanding
 ###################################################
 
+import base64
+import os
+import sqlite3
 import flask
-from flask import Flask, Response, request, render_template, redirect, url_for
+from flask import Flask, g, request, render_template
 from flaskext.mysql import MySQL
 import flask_login
+from pymysql.err import OperationalError as DatabaseOperationalError
 import re
 
 #for getting current date
 from datetime import date
 
-#for image uploading
-import os, base64
-
 mysql = MySQL()
 app = Flask(__name__, static_folder='static')
-app.secret_key = 'cs460projectkevinkimjiahaohuamani'  # Change this!
+app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-me')
 
-#These will need to be changed according to your creditionals
-app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'cs460cs460'
-app.config['MYSQL_DATABASE_DB'] = 'photoshare'
-app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+# These defaults preserve the original local setup. Override them with
+# environment variables outside development.
+app.config['MYSQL_DATABASE_USER'] = os.getenv('MYSQL_DATABASE_USER', 'root')
+app.config['MYSQL_DATABASE_PASSWORD'] = os.getenv('MYSQL_DATABASE_PASSWORD', 'cs460cs460')
+app.config['MYSQL_DATABASE_DB'] = os.getenv('MYSQL_DATABASE_DB', 'photoshare')
+app.config['MYSQL_DATABASE_HOST'] = os.getenv('MYSQL_DATABASE_HOST', 'localhost')
+app.config['DATABASE_BACKEND'] = os.getenv('PHOTOSHARE_DATABASE', 'mysql').lower()
+app.config['SQLITE_DATABASE_PATH'] = os.getenv(
+	'SQLITE_DATABASE_PATH',
+	os.path.join(app.instance_path, 'photoshare.sqlite3')
+)
 mysql.init_app(app)
 
 #begin code used for login
 login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
 
-conn = mysql.connect()
-cursor = conn.cursor()
-cursor.execute("SELECT email from Users")
-users = cursor.fetchall()
+def initialize_sqlite_schema(db_conn):
+	db_conn.executescript(
+		"""
+		CREATE TABLE IF NOT EXISTS Users (
+			user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+			firstname TEXT NOT NULL,
+			lastname TEXT NOT NULL,
+			password TEXT NOT NULL,
+			gender TEXT,
+			email TEXT UNIQUE NOT NULL,
+			hometown TEXT,
+			birthday DATE NOT NULL,
+			score INTEGER DEFAULT 0
+		);
+
+		CREATE TABLE IF NOT EXISTS Friends (
+			user_id1 INTEGER,
+			user_id2 INTEGER
+		);
+
+		CREATE TABLE IF NOT EXISTS Pictures (
+			picture_id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER,
+			imgdata BLOB,
+			caption TEXT
+		);
+
+		CREATE TABLE IF NOT EXISTS Albums (
+			album_id INTEGER PRIMARY KEY AUTOINCREMENT,
+			date DATE,
+			albumname TEXT,
+			user_id INTEGER
+		);
+
+		CREATE TABLE IF NOT EXISTS Contains (
+			album_id INTEGER,
+			picture_id INTEGER PRIMARY KEY
+		);
+
+		CREATE TABLE IF NOT EXISTS Comments (
+			comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+			date DATE,
+			text TEXT
+		);
+
+		CREATE TABLE IF NOT EXISTS Tag (
+			word TEXT PRIMARY KEY
+		);
+
+		CREATE TABLE IF NOT EXISTS Associate (
+			picture_id INTEGER,
+			word TEXT,
+			PRIMARY KEY (picture_id, word)
+		);
+
+		CREATE TABLE IF NOT EXISTS Has (
+			comment_id INTEGER,
+			picture_id INTEGER,
+			PRIMARY KEY (comment_id, picture_id)
+		);
+
+		CREATE TABLE IF NOT EXISTS Likes (
+			user_id INTEGER,
+			picture_id INTEGER,
+			PRIMARY KEY (user_id, picture_id)
+		);
+
+		CREATE TABLE IF NOT EXISTS Made (
+			user_id INTEGER,
+			comment_id INTEGER,
+			PRIMARY KEY (user_id, comment_id)
+		);
+		"""
+	)
+	db_conn.commit()
+
+def sqlite_sql(sql):
+	return (
+		sql.replace('%s', '?')
+		.replace('INSERT IGNORE INTO', 'INSERT OR IGNORE INTO')
+		.replace('SELECT LAST_INSERT_ID()', 'SELECT last_insert_rowid()')
+	)
+
+class SQLiteCursor:
+	def __init__(self, cursor):
+		self.cursor = cursor
+		self.results = None
+		self.result_index = 0
+
+	def execute(self, sql, params=None):
+		self.results = None
+		self.result_index = 0
+		params = params or ()
+		translated_sql = sqlite_sql(sql)
+		self.cursor.execute(translated_sql, params)
+		if translated_sql.lstrip().upper().startswith('SELECT'):
+			self.results = self.cursor.fetchall()
+			return len(self.results)
+		return self.cursor.rowcount
+
+	def fetchall(self):
+		if self.results is not None:
+			return self.results
+		return self.cursor.fetchall()
+
+	def fetchone(self):
+		if self.results is not None:
+			if self.result_index >= len(self.results):
+				return None
+			row = self.results[self.result_index]
+			self.result_index += 1
+			return row
+		return self.cursor.fetchone()
+
+	@property
+	def lastrowid(self):
+		return self.cursor.lastrowid
+
+class SQLiteConnection:
+	def __init__(self, db_conn):
+		self.db_conn = db_conn
+
+	def cursor(self):
+		return SQLiteCursor(self.db_conn.cursor())
+
+	def commit(self):
+		return self.db_conn.commit()
+
+	def close(self):
+		return self.db_conn.close()
+
+def get_connection():
+	if 'db_conn' not in g:
+		if app.config['DATABASE_BACKEND'] == 'sqlite':
+			os.makedirs(app.instance_path, exist_ok=True)
+			sqlite_conn = sqlite3.connect(app.config['SQLITE_DATABASE_PATH'])
+			initialize_sqlite_schema(sqlite_conn)
+			g.db_conn = SQLiteConnection(sqlite_conn)
+		else:
+			g.db_conn = mysql.connect()
+	return g.db_conn
+
+@app.teardown_appcontext
+def close_connection(error=None):
+	db_conn = g.pop('db_conn', None)
+	if db_conn is not None:
+		db_conn.close()
+
+class ConnectionProxy:
+	def cursor(self):
+		return get_connection().cursor()
+
+	def commit(self):
+		return get_connection().commit()
+
+class CursorProxy:
+	def execute(self, *args, **kwargs):
+		g.db_cursor = get_connection().cursor()
+		return g.db_cursor.execute(*args, **kwargs)
+
+	def fetchall(self):
+		return g.db_cursor.fetchall()
+
+	def fetchone(self):
+		return g.db_cursor.fetchone()
+
+conn = ConnectionProxy()
+cursor = CursorProxy()
+
+@app.template_filter('photo_data_uri')
+def photo_data_uri(photo_blob):
+	if not photo_blob:
+		return ''
+	mime_type = 'image/jpeg'
+	if photo_blob.startswith(b'\x89PNG\r\n\x1a\n'):
+		mime_type = 'image/png'
+	elif photo_blob.startswith(b'GIF87a') or photo_blob.startswith(b'GIF89a'):
+		mime_type = 'image/gif'
+	encoded = base64.b64encode(photo_blob).decode('ascii')
+	return 'data:{0};base64,{1}'.format(mime_type, encoded)
 
 def getUserList():
 	cursor = conn.cursor()
@@ -52,7 +235,10 @@ class User(flask_login.UserMixin):
 
 @login_manager.user_loader
 def user_loader(email):
-	users = getUserList()
+	try:
+		users = getUserList()
+	except DatabaseOperationalError:
+		return
 	if not(email) or email not in str(users):
 		return
 	user = User()
@@ -63,21 +249,28 @@ login_status = False
 
 @login_manager.request_loader
 def request_loader(request):
-	users = getUserList()
 	email = request.form.get('email')
-	if not(email) or email not in str(users):
+	if not email:
+		return
+	try:
+		users = getUserList()
+	except DatabaseOperationalError:
+		return
+	if email not in str(users):
 		return
 	user = User()
 	user.id = email
-	cursor = mysql.connect().cursor()
-	cursor.execute("SELECT password FROM Users WHERE email = '{0}'".format(email))
+	cursor = conn.cursor()
+	cursor.execute("SELECT password FROM Users WHERE email = %s", (email,))
 	data = cursor.fetchall()
 	pwd = str(data[0][0] )
-	print("REQUEST:", request.form['password'], "PWD:", pwd)
+	password = request.form.get('password')
+	if password is None:
+		return
 	if login_status == False:
 		return
 	else:
-		user.is_authenticated = request.form['password'] == pwd
+		user.is_authenticated = password == pwd
 		return user
 
 '''
@@ -89,51 +282,47 @@ def new_page_function():
 
 def getTagPhotos(word):
 	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id IN (SELECT picture_id FROM Associate WHERE word = '{0}')".format(word))
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id IN (SELECT picture_id FROM Associate WHERE word = %s)", (word,))
 	return cursor.fetchall()
 
 def getUserTagPhotos(word):
 	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id IN (SELECT picture_id FROM Associate WHERE word = '{0}') AND user_id = '{1}'".format(word, getUserIdFromEmail(flask_login.current_user.id)))
+	cursor.execute(
+		"SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id IN (SELECT picture_id FROM Associate WHERE word = %s) AND user_id = %s",
+		(word, getUserIdFromEmail(flask_login.current_user.id))
+	)
 	return cursor.fetchall()
 
 def getAlbumPhotos(aid):
     cursor = conn.cursor()
-    cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id IN (SELECT picture_id FROM Contains WHERE album_id = '{0}')".format(aid))
+    cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id IN (SELECT picture_id FROM Contains WHERE album_id = %s)", (aid,))
     return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
 
 def getPhotoDetails(pid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id = '{0}'".format(pid))
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id = %s", (pid,))
 	return cursor.fetchall()
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
 	if flask.request.method == 'GET':
-		return '''
-			   <form action='login' method='POST'>
-				<input type='email' name='email' id='email' placeholder='email'></input>
-				<input type='password' name='password' id='password' placeholder='password'></input>
-				<input type='submit' name='submit'></input>
-			   </form></br>
-		   <a href='/'>Home</a>
-			   '''
+		return render_template('login.html')
 	#The request method is POST (page is recieving data)
-	email = flask.request.form['email']
+	email = flask.request.form.get('email', '').strip()
+	password = flask.request.form.get('password', '')
 	cursor = conn.cursor()
 	#check if email is registered
-	if cursor.execute("SELECT password FROM Users WHERE email = '{0}'".format(email)):
+	if cursor.execute("SELECT password FROM Users WHERE email = %s", (email,)):
 		data = cursor.fetchall()
 		pwd = str(data[0][0] )
-		if flask.request.form['password'] == pwd:
+		if password == pwd:
 			user = User()
 			user.id = email
 			flask_login.login_user(user) #okay login in user
 			return flask.redirect(flask.url_for('protected')) #protected is a function defined in this file
 
 	#information did not match
-	return "<a href='/login'>Try again</a>\
-			</br><a href='/register'>or make an account</a>"
+	return render_template('login.html', error='Email and password did not match.')
 
 @app.route('/logout')
 def logout():
@@ -143,6 +332,14 @@ def logout():
 @login_manager.unauthorized_handler
 def unauthorized_handler():
 	return render_template('unauth.html')
+
+@app.errorhandler(DatabaseOperationalError)
+def handle_database_error(error):
+	return render_template('database_error.html'), 503
+
+@app.errorhandler(sqlite3.Error)
+def handle_sqlite_error(error):
+	return render_template('database_error.html'), 503
 
 #you can specify specific methods (GET/POST) in function header instead of inside the functions as seen earlier
 @app.route("/register", methods=['GET'])
@@ -174,7 +371,7 @@ def register_user():
 		user.id = email
 		flask_login.login_user(user)
 		login_status = True
-		return render_template('hello.html', name=email, message='Account Created!')
+		return render_template('hello.html', name=firstname, message='Account Created!')
 	else:
 		print("couldn't find all tokens")
 		print('oof')
@@ -183,27 +380,33 @@ def register_user():
 
 def getUsersPhotos(uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE user_id = '{0}'".format(uid))
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE user_id = %s", (uid,))
 	return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
 
 def getUserIdFromEmail(email):
 	cursor = conn.cursor()
-	cursor.execute("SELECT user_id FROM Users WHERE email = '{0}'".format(email))
+	cursor.execute("SELECT user_id FROM Users WHERE email = %s", (email,))
 	return cursor.fetchone()[0]
 
 def getEmailFromUserID(user_id):
     cursor = conn.cursor()
-    cursor.execute("SELECT email FROM Users WHERE user_id = '{0}'".format(user_id))
+    cursor.execute("SELECT email FROM Users WHERE user_id = %s", (user_id,))
     return cursor.fetchone()[0]
+
+def getDisplayNameFromEmail(email):
+	cursor = conn.cursor()
+	cursor.execute("SELECT firstname FROM Users WHERE email = %s", (email,))
+	result = cursor.fetchone()
+	return result[0] if result else email
 
 def getCommentId(comment):
 	cursor = conn.cursor()
-	cursor.execute("SELECT comment_id FROM Comments WHERE comment_id = '{0}'".format(comment))
+	cursor.execute("SELECT comment_id FROM Comments WHERE comment_id = %s", (comment,))
 
 def isEmailUnique(email):
 	#use this to check if a email has already been registered
 	cursor = conn.cursor()
-	if cursor.execute("SELECT email  FROM Users WHERE email = '{0}'".format(email)):
+	if cursor.execute("SELECT email FROM Users WHERE email = %s", (email,)):
 		#this means there are greater than zero entries with that email
 		return False
 	else:
@@ -213,211 +416,134 @@ def isEmailUnique(email):
 @app.route('/profile')
 @flask_login.login_required
 def protected():
-	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile")
+	return render_template('hello.html', name=getDisplayNameFromEmail(flask_login.current_user.id), message="Here's your profile")
+
+def get_photo_comments(picture_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT text FROM Comments WHERE comment_id IN (SELECT comment_id FROM Has WHERE picture_id = %s)", (picture_id,))
+	return [row[0] for row in cursor.fetchall()]
+
+def get_photo_tags(picture_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT word FROM Associate WHERE picture_id = %s", (picture_id,))
+	return [row[0] for row in cursor.fetchall()]
+
+def get_photo_like_count(picture_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT COUNT(*) FROM Likes WHERE picture_id = %s", (picture_id,))
+	result = cursor.fetchone()
+	return result[0] if result else 0
+
+def current_user_liked_photo(picture_id):
+	if not flask_login.current_user.is_authenticated:
+		return False
+	cursor = conn.cursor()
+	cursor.execute(
+		"SELECT user_id, picture_id FROM Likes WHERE user_id = %s AND picture_id = %s",
+		(getUserIdFromEmail(flask_login.current_user.id), picture_id)
+	)
+	return cursor.fetchone() is not None
+
+def current_user_owns_photo(picture_id):
+	if not flask_login.current_user.is_authenticated:
+		return False
+	cursor = conn.cursor()
+	cursor.execute("SELECT user_id FROM Pictures WHERE picture_id = %s", (picture_id,))
+	photo_owner = cursor.fetchone()
+	return bool(photo_owner and photo_owner[0] == getUserIdFromEmail(flask_login.current_user.id))
+
+def create_photo_comment(picture_id, comment_text):
+	comment_text = (comment_text or '').strip()
+	if not comment_text:
+		return
+
+	cursor = conn.cursor()
+	cursor.execute("INSERT INTO Comments (text) VALUES (%s)", (comment_text,))
+	conn.commit()
+	comment_id = getattr(cursor, 'lastrowid', None)
+	if not comment_id:
+		cursor.execute("SELECT LAST_INSERT_ID()")
+		comment_id = cursor.fetchone()[0]
+	cursor.execute("INSERT INTO Has (comment_id, picture_id) VALUES (%s, %s)", (comment_id, picture_id))
+	conn.commit()
+
+	if flask_login.current_user.is_authenticated:
+		user_id = getUserIdFromEmail(flask_login.current_user.id)
+		cursor.execute("INSERT INTO Made (user_id, comment_id) VALUES (%s, %s)", (user_id, comment_id))
+		conn.commit()
+		cursor.execute("UPDATE Users SET score = score + 1 WHERE user_id = %s", (user_id,))
+		conn.commit()
+
+def render_photo_detail(picture_id):
+	context = {
+		'photo': getPhotoDetails(picture_id),
+		'comments': get_photo_comments(picture_id),
+		'totalLikes': get_photo_like_count(picture_id),
+		'tags': get_photo_tags(picture_id),
+	}
+
+	if flask_login.current_user.is_authenticated:
+		context['notsame'] = not current_user_owns_photo(picture_id)
+		context['liked'] = current_user_liked_photo(picture_id)
+		return render_template('photo.html', **context)
+
+	return render_template('photovisitor.html', **context)
+
 @app.route('/albums/<path:subpath>/add_comment', methods=['POST'])
 def add_comment(subpath):
-		try:
-			user = flask_login.current_user.id
-			if "photo" in subpath:
-				picture_id = request.form.get('picture_id')
-				uid = getUserIdFromEmail(flask_login.current_user.id)
-				addcomment = request.form.get('addcomment')
-				cursor = conn.cursor()
-				cursor.execute("INSERT INTO Comments (text) VALUES ('{0}')".format(addcomment))
-				conn.commit()
-				cursor.execute("SELECT comment_id FROM Comments WHERE text = '{0}'".format(addcomment))
-				cid = cursor.fetchall()
-				cidNew = max(cid)[0]
-				cursor.execute("INSERT INTO Has (comment_id, picture_id) VALUES ('{0}', '{1}')".format(cidNew, picture_id))
-				conn.commit()
-				cursor.execute("INSERT INTO Made (user_id, comment_id) VALUES ('{0}', '{1}')".format(getUserIdFromEmail(flask_login.current_user.id), cidNew))
-				conn.commit()
-				cursor.execute("UPDATE Users Set score = score + 1 WHERE user_id = '{0}'".format(uid))
-				conn.commit()
-				cursor.execute("SELECT text FROM Comments WHERE comment_id IN (SELECT comment_id FROM Has WHERE picture_id = '{0}')".format(picture_id))
-				commentsv = cursor.fetchall()
-				comments_list = [(row[0]) for row in commentsv]
+	if "photo" in subpath:
+		picture_id = request.form.get('picture_id')
+		create_photo_comment(picture_id, request.form.get('addcomment'))
+		return render_photo_detail(picture_id)
 
-				cursor.execute("SELECT user_id, picture_id FROM Likes WHERE user_id = '{0}' AND picture_id = '{1}'".format(getUserIdFromEmail(flask_login.current_user.id), picture_id))
-				studd = cursor.fetchall()
-				if len(studd) == 0:
-					liked = False
-				else:
-					liked = True
-
-				cursor.execute("SELECT SUM(1) FROM Likes WHERE picture_id = '{0}'".format(picture_id))
-				totalLikes = cursor.fetchall()[0][0]
-
-				cursor.execute("SELECT word FROM Associate WHERE picture_id = '{0}'".format(picture_id))
-				tags = cursor.fetchall()
-				tags_list = [(row[0]) for row in tags]
-				return render_template('photo.html', photo=getPhotoDetails(picture_id), comments=comments_list, notsame=True, liked=liked, totalLikes=totalLikes, tags=tags_list, base64=base64)
-			else:
-				#for albums
-				print("<><><><><>><")
-				return render_template('photos.html', photos=getAlbumPhotos(subpath), base64=base64)
-		except:
-			if "photo" in subpath:
-				picture_id = request.form.get('picture_id')
-				addcomment = request.form.get('addcomment')
-				cursor = conn.cursor()
-				cursor.execute("INSERT INTO Comments (text) VALUES ('{0}')".format(addcomment))
-				conn.commit()
-				cursor.execute("SELECT comment_id FROM Comments WHERE text = '{0}'".format(addcomment))
-				cid = cursor.fetchall()
-				cidNew = max(cid)[0]
-				cursor.execute("INSERT INTO Has (comment_id, picture_id) VALUES ('{0}', '{1}')".format(cidNew, picture_id))
-				conn.commit()
-				cursor.execute("SELECT text FROM Comments WHERE comment_id IN (SELECT comment_id FROM Has WHERE picture_id = '{0}')".format(picture_id))
-				commentsv = cursor.fetchall()
-				comments_list = [(row[0]) for row in commentsv]
-
-
-				cursor.execute("SELECT SUM(1) FROM Likes WHERE picture_id = '{0}'".format(picture_id))
-				totalLikes = cursor.fetchall()[0][0]
-
-				cursor.execute("SELECT word FROM Associate WHERE picture_id = '{0}'".format(picture_id))
-				tags = cursor.fetchall()
-				tags_list = [(row[0]) for row in tags]
-				return render_template('photovisitor.html', photo=getPhotoDetails(picture_id), comments=comments_list, totalLikes=totalLikes, tags=tags_list, base64=base64)
-			else:
-				#for albums
-				print("<><><><><>><")
-				return render_template('photos.html', photos=getAlbumPhotos(subpath), base64=base64)
+	return render_template('photos.html', photos=getAlbumPhotos(subpath))
 
 
 @app.route('/albums/<path:subpath>/add_like', methods=['POST'])
+@flask_login.login_required
 def add_like(subpath):
-		if "photo" in subpath:
-			picture_id = request.form.get('picture_id')
-			cursor = conn.cursor()
-			cursor.execute("INSERT INTO Likes (user_id, picture_id) VALUES ('{0}', '{1}')".format(getUserIdFromEmail(flask_login.current_user.id), picture_id))
-			conn.commit()
-			cursor.execute("SELECT text FROM Comments WHERE comment_id IN (SELECT comment_id FROM Has WHERE picture_id = '{0}')".format(picture_id))
-			commentsv = cursor.fetchall()
-			comments_list = [(row[0]) for row in commentsv]
-			liked=True
+	if "photo" in subpath:
+		picture_id = request.form.get('picture_id')
+		cursor = conn.cursor()
+		cursor.execute(
+			"INSERT IGNORE INTO Likes (user_id, picture_id) VALUES (%s, %s)",
+			(getUserIdFromEmail(flask_login.current_user.id), picture_id)
+		)
+		conn.commit()
+		return render_photo_detail(picture_id)
 
-			cursor.execute("SELECT user_id FROM Pictures WHERE picture_id = '{0}'".format(picture_id))
-			userv = cursor.fetchall()
-			if userv[0][0] == getUserIdFromEmail(flask_login.current_user.id):
-				nosame = False
-			else:
-				nosame = True
-
-			cursor.execute("SELECT SUM(1) FROM Likes WHERE picture_id = '{0}'".format(picture_id))
-			totalLikes = cursor.fetchall()[0][0]
-
-			cursor.execute("SELECT word FROM Associate WHERE picture_id = '{0}'".format(picture_id))
-			tags = cursor.fetchall()
-			tags_list = [(row[0]) for row in tags]
-			return render_template('photo.html', photo=getPhotoDetails(picture_id), comments=comments_list, notsame=nosame, liked=liked, totalLikes=totalLikes, tags=tags_list, base64=base64)
-		else:
-			#for albums
-			print("<><><><><>><")
-			return render_template('photos.html', photos=getAlbumPhotos(subpath), base64=base64)
+	return render_template('photos.html', photos=getAlbumPhotos(subpath))
 		
 @app.route('/albums/<path:subpath>/add_unlike', methods=['POST'])
+@flask_login.login_required
 def add_unlike(subpath):
-		if "photo" in subpath:
-			picture_id = request.form.get('picture_id')
-			cursor = conn.cursor()
-			cursor.execute("DELETE FROM Likes WHERE user_id = '{0}' AND picture_id = '{1}'".format(getUserIdFromEmail(flask_login.current_user.id), picture_id))
-			conn.commit()
-			cursor.execute("SELECT text FROM Comments WHERE comment_id IN (SELECT comment_id FROM Has WHERE picture_id = '{0}')".format(picture_id))
-			commentsv = cursor.fetchall()
-			comments_list = [(row[0]) for row in commentsv]
-			liked=False
+	if "photo" in subpath:
+		picture_id = request.form.get('picture_id')
+		cursor = conn.cursor()
+		cursor.execute(
+			"DELETE FROM Likes WHERE user_id = %s AND picture_id = %s",
+			(getUserIdFromEmail(flask_login.current_user.id), picture_id)
+		)
+		conn.commit()
+		return render_photo_detail(picture_id)
 
-			cursor.execute("SELECT user_id FROM Pictures WHERE picture_id = '{0}'".format(picture_id))
-			userv = cursor.fetchall()
-			if userv[0][0] == getUserIdFromEmail(flask_login.current_user.id):
-				nosame = False
-			else:
-				nosame = True
-
-			cursor.execute("SELECT SUM(1) FROM Likes WHERE picture_id = '{0}'".format(picture_id))
-			totalLikes = cursor.fetchall()[0][0]
-
-			cursor.execute("SELECT word FROM Associate WHERE picture_id = '{0}'".format(picture_id))
-			tags = cursor.fetchall()
-			tags_list = [(row[0]) for row in tags]
-			return render_template('photo.html', photo=getPhotoDetails(picture_id), comments=comments_list, notsame=nosame, liked=liked, totalLikes=totalLikes, tags=tags_list, base64=base64)
-		else:
-			#for albums
-			print("<><><><><>><")
-			return render_template('photos.html', photos=getAlbumPhotos(subpath), base64=base64)
+	return render_template('photos.html', photos=getAlbumPhotos(subpath))
 
 
 @app.route('/albums/<path:subpath>', methods=['GET'])
 def display_photos(subpath):
-	print(subpath)
-	try:
-		user = flask_login.current_user.id
-		if "likes" in subpath:
-			ns = re.findall('\d+', subpath)
-			cursor.execute("SELECT email FROM Users WHERE user_id IN (SELECT user_id FROM Likes WHERE picture_id = '{0}')".format(ns[0]))
-			likesv = cursor.fetchall()
-			likes_list = [(row[0]) for row in likesv]
-			print(likes_list)
-			return render_template('likes.html', likesby = likes_list)
-		elif "photo" in subpath:
-			ns = re.findall('\d+', subpath)
-			nosame = True
-			#for individual photos
-			cursor.execute("SELECT user_id FROM Pictures WHERE picture_id = '{0}'".format(ns[0]))
-			userv = cursor.fetchall()
-			print(flask_login.current_user)
-			if userv[0][0] == getUserIdFromEmail(flask_login.current_user.id):
-					nosame = False
-			cursor.execute("SELECT text FROM Comments WHERE comment_id IN (SELECT comment_id FROM Has WHERE picture_id = '{0}')".format(ns[0]))
-			commentsv = cursor.fetchall()
-			comments_list = [(row[0]) for row in commentsv]
-			cursor.execute("SELECT user_id, picture_id FROM Likes WHERE user_id = '{0}' AND picture_id = '{1}'".format(getUserIdFromEmail(flask_login.current_user.id), ns[0]))
-			studd = cursor.fetchall()
-			if len(studd) == 0:
-				liked = False
-			else:
-				liked = True
+	if "likes" in subpath:
+		ns = re.findall(r'\d+', subpath)
+		picture_id = ns[0]
+		cursor.execute("SELECT email FROM Users WHERE user_id IN (SELECT user_id FROM Likes WHERE picture_id = %s)", (picture_id,))
+		likes_list = [row[0] for row in cursor.fetchall()]
+		return render_template('likes.html', likesby=likes_list)
 
-			cursor.execute("SELECT SUM(1) FROM Likes WHERE picture_id = '{0}'".format(ns[0]))
-			totalLikes = cursor.fetchall()[0][0]
+	if "photo" in subpath:
+		ns = re.findall(r'\d+', subpath)
+		return render_photo_detail(ns[0])
 
-			cursor.execute("SELECT word FROM Associate WHERE picture_id = '{0}'".format(ns[0]))
-			tags = cursor.fetchall()
-			tags_list = [(row[0]) for row in tags]
-
-
-			return render_template('photo.html', photo=getPhotoDetails(ns[0]), comments=comments_list, notsame=nosame,liked=liked, totalLikes=totalLikes, tags=tags_list, base64=base64)
-		else:
-			#for albums
-			return render_template('photos.html', photos=getAlbumPhotos(subpath), base64=base64)
-	except:
-		if "likes" in subpath:
-			ns = re.findall('\d+', subpath)
-			cursor.execute("SELECT email FROM Users WHERE user_id IN (SELECT user_id FROM Likes WHERE picture_id = '{0}')".format(ns[0]))
-			likesv = cursor.fetchall()
-			likes_list = [(row[0]) for row in likesv]
-			print(likes_list)
-			return render_template('likes.html', likesby = likes_list)
-		elif "photo" in subpath:
-			ns = re.findall('\d+', subpath)
-			nosame = True
-			#for individual photos
-			cursor.execute("SELECT text FROM Comments WHERE comment_id IN (SELECT comment_id FROM Has WHERE picture_id = '{0}')".format(ns[0]))
-			commentsv = cursor.fetchall()
-			comments_list = [(row[0]) for row in commentsv]
-
-			cursor.execute("SELECT SUM(1) FROM Likes WHERE picture_id = '{0}'".format(ns[0]))
-			totalLikes = cursor.fetchall()[0][0]
-
-			cursor.execute("SELECT word FROM Associate WHERE picture_id = '{0}'".format(ns[0]))
-			tags = cursor.fetchall()
-			tags_list = [(row[0]) for row in tags]
-			return render_template('photovisitor.html', photo=getPhotoDetails(ns[0]), comments=comments_list, totalLikes=totalLikes, tags=tags_list, base64=base64)
-		else:
-			#for albums
-			return render_template('photos.html', photos=getAlbumPhotos(subpath), base64=base64)
+	return render_template('photos.html', photos=getAlbumPhotos(subpath))
 
 
 @app.route('/userAlbums', methods=['GET'])
@@ -588,7 +714,7 @@ def friendRecs():
 # photos uploaded using base64 encoding so they can be directly embeded in HTML
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 def allowed_file(filename):
-	return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/upload', methods=['GET', 'POST'])
 @flask_login.login_required
@@ -664,10 +790,14 @@ def display_photosearch():
 def search_tag():
 	tags = request.form.get("tagSearch")
 	tag_split = tags.split()
-	arr = ()
+	arr = []
+	seen_photo_ids = set()
 	for word in tag_split:
-		arr = arr + getTagPhotos(word)
-	return render_template('photosearch.html', photos = arr, base64=base64)
+		for photo in getTagPhotos(word):
+			if photo[1] not in seen_photo_ids:
+				arr.append(photo)
+				seen_photo_ids.add(photo[1])
+	return render_template('photosearch.html', photos=arr, tag_query=tags, base64=base64)
 
 @app.route('/tags/<path:subpath>', methods=['GET'])
 def display_tag_photos(subpath):
@@ -694,7 +824,7 @@ def display_leaderboard():
 	tagleaderboard_list = [(row[0], row[1]) for row in tagleaderboardv]
 	return render_template('leaderboard.html', leaderboard=leaderboard_list, tagleaderboard=tagleaderboard_list)
 
-@app.route("/comments", methods=['Get'])
+@app.route("/comments", methods=['GET'])
 def display_commentSearch():
 	return render_template('comments.html')
 
@@ -710,7 +840,7 @@ def search_comment():
 	print(sorted_emails)
 	return render_template('comments.html', comments = sorted_emails, text=comment)
 
-@app.route("/photoRecs", methods=['Get'])
+@app.route("/photoRecs", methods=['GET'])
 @flask_login.login_required
 def display_photoRecs():
 	cursor = conn.cursor()
@@ -732,17 +862,17 @@ def display_photoRecs():
 #default page
 @app.route("/", methods=['GET'])
 def hello():
-	return render_template('hello.html', message='Welecome to Photoshare')
+	return render_template('hello.html', message='Welcome to PhotoShare')
 
-@app.route("/utils/test.html", methods=['Get'])
+@app.route("/utils/test.html", methods=['GET'])
 def test():
 	return render_template('test.html')
 
-@app.route("/utils/script.js", methods=['Get'])
+@app.route("/utils/script.js", methods=['GET'])
 def javascript():
 	return render_template('script.js')
 
-@app.route("/minimal-table.css", methods=['Get'])
+@app.route("/minimal-table.css", methods=['GET'])
 def tableDesign():
 	return render_template('minimal-table.css')
 
@@ -753,4 +883,7 @@ def tableDesign():
 if __name__ == "__main__":
 	#this is invoked when in the shell  you run
 	#$ python app.py
-	app.run(port=5000, debug=True)
+	app.run(
+		port=int(os.getenv('PORT', 5000)),
+		debug=os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
+	)

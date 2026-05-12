@@ -1,28 +1,46 @@
-<!-- author ben lawson (balawson@bu.edu) -->
-{% include "navbar.html" %}
-<head>
-    <title>Upload a photo!</title>
-    <script src="/utils/script.js" defer></script>
-</head>
-    <body>
-        <div class="title">
-            <h1>Upload a photo to Photoshare</h1>
+{% extends "base.html" %}
+
+{% block title %}Upload Photo | PhotoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Library</p>
+        <h1>Upload a Photo</h1>
+        <p class="page-subtitle">Add a photo to one of your albums and include tags to make it discoverable.</p>
+    </div>
+</header>
+
+<section class="panel">
+    <form class="form-card" method="post" enctype="multipart/form-data" action="/upload">
+        <div class="field">
+            <label for="photo">Photo</label>
+            <input id="photo" type="file" name="photo" accept="image/*" required>
         </div>
-            <form method="post" enctype="multipart/form-data" action="/upload">
-                <label for="photo">Select photo:</label>
-                <input type="file" name="photo" required='true' /><br />
-                <label for="caption">Please type a caption:</label>
-                <input type="text" name="caption" required='true' /><br />
-                <select name="album" required="true">
-                    <option value="">Select an album</option>
-                    {% for album in albums %}
-                    <option value="{{album}}">{{album}}</option>
-                    {% endfor %}
-                </select>
-                <div id="tag-input">
-                    <label for="tag">Tags:</label>
-                </div>
-                <button type="button" onclick="addTagInput()">Add Tag</button><br>
-                <input type="submit" value="Upload" />
-            </form>
-    </body>
+        <div class="field">
+            <label for="caption">Caption</label>
+            <input id="caption" type="text" name="caption" placeholder="A short description" required>
+        </div>
+        <div class="field">
+            <label for="album">Album</label>
+            <select id="album" name="album" required>
+                <option value="">Select an album</option>
+                {% for album in albums %}
+                    <option value="{{ album }}">{{ album }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div id="tag-input" class="field">
+            <label for="tag1">Tags</label>
+        </div>
+        <div class="action-row">
+            <button class="button--secondary" type="button" onclick="addTagInput()">Add Tag</button>
+            <input type="submit" value="Upload Photo">
+        </div>
+    </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/utils/script.js" defer></script>
+{% endblock %}

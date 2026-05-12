@@ -1,23 +1,19 @@
-<!DOCTYPE html>
-{% include "navbar.html" %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-        <h2>Your photos - {{tag}}</h2>
-        <a href="/tags/{{tag}}"><h5>All Photos</h5></a>
+{% extends "base.html" %}
+{% from "macros.html" import photo_grid %}
 
-        <ul>
-            {% for photo in photos %}
-            <li>
-                <a href="/albums/photo/{{ photo[1] }}"><img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></a><br>
-                {{photo[2]}}
-            </li><br>
-            {% endfor %}
+{% block title %}Your {{ tag }} Photos | PhotoShare{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Tag</p>
+        <h1>Your Photos: {{ tag }}</h1>
+        <p class="page-subtitle">Photos from your library using this tag.</p>
+    </div>
+    <div class="page-actions">
+        <a class="button button--secondary" href="/tags/{{ tag }}">All Photos</a>
+    </div>
+</header>
+
+{{ photo_grid(photos, empty_text="You do not have photos with this tag yet.") }}
+{% endblock %}

@@ -1,10 +1,16 @@
-{% include "navbar.html" %}
-<h2>Photos</h2>
-<ul>
-    {% for photo in photos %}
-    <li>
-        <a href="/albums/photo/{{ photo[1] }}"><img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></a><br>
-        {{photo[2]}}
-    </li><br>
-    {% endfor %}
-</ul>
+{% extends "base.html" %}
+{% from "macros.html" import photo_grid %}
+
+{% block title %}Photos | PhotoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Album</p>
+        <h1>Photos</h1>
+        <p class="page-subtitle">Select a photo to view comments, tags, and likes.</p>
+    </div>
+</header>
+
+{{ photo_grid(photos) }}
+{% endblock %}
