@@ -37,7 +37,7 @@ The screenshots below are generated from the local SQLite demo database.
 
 ### Public Pages
 
-| Public home | Log in |
+| Redesigned public home | Log in |
 | --- | --- |
 | ![PhotoShare public home page](docs/screenshots/01-home-public.png) | ![PhotoShare login page](docs/screenshots/02-login.png) |
 
