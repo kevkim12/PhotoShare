@@ -4,7 +4,7 @@ PhotoShare is a Flask web application for creating photo albums, uploading photo
 
 The app includes a polished responsive interface with shared templates, reusable photo-card layouts, account pages, album management, friend recommendations, tag-based photo search, comment search, and a contributor leaderboard.
 
-Live GitHub Pages preview: https://kevkim12.github.io/PhotoShare/
+Live GitHub Pages preview: https://kevkim12.github.io/portfolio/photoshare-live/
 
 ## Technologies Used
 
