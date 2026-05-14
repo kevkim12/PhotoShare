@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="PhotoShare is a Flask photo-sharing app for albums, uploads, tags, comments, likes, friends, search, leaderboards, and recommendations.">
+    <title>PhotoShare</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="navbar-left">
+            <a class="brand" href="#top" aria-label="PhotoShare home">
+                <img src="assets/photoshare-logo.svg" alt="" aria-hidden="true">
+                <span>PhotoShare</span>
+            </a>
+            <nav class="navbar-links" aria-label="Primary navigation">
+                <a class="nav-link" href="#top">Home</a>
+                <a class="nav-link" href="#albums">Albums</a>
+                <a class="nav-link" href="#tour">Search</a>
+                <a class="nav-link" href="#manage">Manage</a>
+            </nav>
+        </div>
+        <a class="search-pill" href="#tour" aria-label="Search photos">
+            <span class="search-icon" aria-hidden="true"></span>
+            <span>Search photos</span>
+        </a>
+        <div class="navbar-actions">
+            <a class="button button-secondary" href="#upload">Upload</a>
+            <a class="button" href="https://github.com/kevkim12/PhotoShare" target="_blank" rel="noreferrer">GitHub</a>
+        </div>
+    </header>
+
+    <main id="top" class="page">
+        <section class="hero" aria-labelledby="hero-title">
+            <img class="hero-logo" src="assets/photoshare-logo.svg" alt="PhotoShare logo">
+            <p class="eyebrow">Photo Upload Website</p>
+            <h1 id="hero-title">Share albums, discover photos, and keep up with friends.</h1>
+            <p class="lede">PhotoShare brings albums, uploads, tags, comments, likes, friends, recommendations, and leaderboards into one clean Flask application.</p>
+            <div class="hero-actions">
+                <a class="button" href="#upload">Upload Photo</a>
+                <a class="button button-secondary" href="#albums">Browse Albums</a>
+            </div>
+        </section>
+
+        <section id="albums" class="section" aria-labelledby="albums-title">
+            <div class="section-heading">
+                <p class="eyebrow">Album Library</p>
+                <h2 id="albums-title">Built for shared photo collections.</h2>
+                <p class="section-copy">Users can browse public albums, open individual photo pages, search by tags, and move between public discovery and signed-in management flows.</p>
+            </div>
+            <div class="showcase-grid">
+                <article class="browser-frame" aria-label="PhotoShare interface preview">
+                    <div class="browser-bar" aria-hidden="true">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <img data-preview-image src="screenshots/01-home-public.png" alt="PhotoShare public home page">
+                </article>
+                <div class="feature-stack">
+                    <article class="feature-card">
+                        <h3 data-current-title>Public Home</h3>
+                        <p data-current-copy>A centered landing page introduces albums, search, comments, leaderboards, and account actions.</p>
+                    </article>
+                    <article class="feature-card">
+                        <h3>Albums And Photos</h3>
+                        <p>Create collections for trips, events, and everyday moments, then browse each album through responsive photo cards.</p>
+                    </article>
+                    <article class="feature-card">
+                        <h3>Tags And Discovery</h3>
+                        <p>Search one or more tags, view popular tags, and discover recommendations based on shared interests.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="tour" class="section" aria-labelledby="tour-title">
+            <div class="section-heading">
+                <p class="eyebrow">Interface Tour</p>
+                <h2 id="tour-title">Core PhotoShare screens.</h2>
+                <p class="section-copy">Select a screen to update the live preview above.</p>
+            </div>
+            <div class="tour-grid">
+                <button class="tour-card" type="button" aria-current="true" data-preview-src="screenshots/01-home-public.png" data-preview-alt="PhotoShare public home page" data-preview-title="Public Home" data-preview-copy="A centered landing page introduces albums, search, comments, leaderboards, and account actions.">
+                    <img src="screenshots/01-home-public.png" alt="">
+                    <span class="tour-card-content">
+                        <span class="tour-title">Home</span>
+                        <span class="tour-copy">Entry point for browsing, searching, and account creation.</span>
+                    </span>
+                </button>
+                <button class="tour-card" type="button" data-preview-src="screenshots/05-album-photos.png" data-preview-alt="PhotoShare album photo grid" data-preview-title="Album Photos" data-preview-copy="Album pages show shared photos in a compact, responsive grid.">
+                    <img src="screenshots/05-album-photos.png" alt="">
+                    <span class="tour-card-content">
+                        <span class="tour-title">Albums</span>
+                        <span class="tour-copy">Photo cards organize each collection clearly.</span>
+                    </span>
+                </button>
+                <button class="tour-card" type="button" data-preview-src="screenshots/10-photo-search-results.png" data-preview-alt="PhotoShare tag search results" data-preview-title="Tag Search" data-preview-copy="Search results make tagged photos easy to find across public and visible albums.">
+                    <img src="screenshots/10-photo-search-results.png" alt="">
+                    <span class="tour-card-content">
+                        <span class="tour-title">Search</span>
+                        <span class="tour-copy">Find photos by one or more tags.</span>
+                    </span>
+                </button>
+                <button id="upload" class="tour-card" type="button" data-preview-src="screenshots/13-upload.png" data-preview-alt="PhotoShare upload form" data-preview-title="Upload Photo" data-preview-copy="Signed-in users can add a photo, choose an album, enter a caption, and attach searchable tags.">
+                    <img src="screenshots/13-upload.png" alt="">
+                    <span class="tour-card-content">
+                        <span class="tour-title">Upload</span>
+                        <span class="tour-copy">Capture caption, album, and tags in one flow.</span>
+                    </span>
+                </button>
+                <button id="manage" class="tour-card" type="button" data-preview-src="screenshots/15-manage-photos.png" data-preview-alt="PhotoShare manage photos page" data-preview-title="Manage Photos" data-preview-copy="Owner tools keep delete actions aligned and easy to scan from the album management screen.">
+                    <img src="screenshots/15-manage-photos.png" alt="">
+                    <span class="tour-card-content">
+                        <span class="tour-title">Manage</span>
+                        <span class="tour-copy">Review albums and remove photos cleanly.</span>
+                    </span>
+                </button>
+                <button class="tour-card" type="button" data-preview-src="screenshots/12-profile-kevin.png" data-preview-alt="Signed-in PhotoShare profile dashboard" data-preview-title="Profile Dashboard" data-preview-copy="The signed-in dashboard brings account context, upload paths, albums, friends, and recommendations together.">
+                    <img src="screenshots/12-profile-kevin.png" alt="">
+                    <span class="tour-card-content">
+                        <span class="tour-title">Profile</span>
+                        <span class="tour-copy">Signed-in workspace for personal activity.</span>
+                    </span>
+                </button>
+            </div>
+        </section>
+
+        <section class="section" aria-labelledby="coverage-title">
+            <div class="dark-strip">
+                <div>
+                    <h2 id="coverage-title">Full-stack Flask project, published as a GitHub Pages preview.</h2>
+                    <p>The source repo contains the Flask routes, Jinja templates, SQLite demo mode, MySQL config, and generated screenshots.</p>
+                </div>
+                <div class="section-actions">
+                    <a class="button" href="https://github.com/kevkim12/PhotoShare" target="_blank" rel="noreferrer">View GitHub</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <nav aria-label="Footer navigation">
+            <a href="#albums">Albums</a>
+            <a href="#tour">Search</a>
+            <a href="#manage">Manage</a>
+            <a href="https://github.com/kevkim12/PhotoShare" target="_blank" rel="noreferrer">GitHub</a>
+        </nav>
+        <p>&copy; 2026 PhotoShare</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
