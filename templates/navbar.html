@@ -1,15 +1,23 @@
 <nav class="site-header" aria-label="Primary navigation">
-    <a class="navbar__brand" href="/">PhotoShare</a>
-    <ul class="navbar__links">
-        <li><a class="nav-link {% if request.path == '/' %}is-active{% endif %}" href="/">Home</a></li>
-        <li><a class="nav-link {% if request.path.startswith('/albums') %}is-active{% endif %}" href="/albums">Albums</a></li>
-        <li><a class="nav-link {% if request.path.startswith('/photosearch') %}is-active{% endif %}" href="/photosearch">Search</a></li>
-        <li><a class="nav-link {% if request.path.startswith('/leaderboard') %}is-active{% endif %}" href="/leaderboard">Leaderboard</a></li>
-        {% if current_user.is_authenticated %}
-            <li><a class="nav-link {% if request.path.startswith('/userAlbums') %}is-active{% endif %}" href="/userAlbums">Your Albums</a></li>
-            <li><a class="nav-link {% if request.path.startswith('/friends') %}is-active{% endif %}" href="/friends">Friends</a></li>
-        {% endif %}
-    </ul>
+    <div class="navbar__left">
+        <a class="navbar__brand" href="/" aria-label="PhotoShare home">
+            <img class="brand-mark" src="{{ url_for('static', filename='photoshare-logo.svg') }}" alt="" aria-hidden="true">
+            <span>PhotoShare</span>
+        </a>
+        <ul class="navbar__links">
+            <li><a class="nav-link {% if request.path == '/' %}is-active{% endif %}" href="/">Home</a></li>
+            <li><a class="nav-link {% if request.path.startswith('/albums') %}is-active{% endif %}" href="/albums">Albums</a></li>
+            <li><a class="nav-link {% if request.path.startswith('/leaderboard') %}is-active{% endif %}" href="/leaderboard">Leaderboard</a></li>
+            {% if current_user.is_authenticated %}
+                <li><a class="nav-link {% if request.path.startswith('/userAlbums') %}is-active{% endif %}" href="/userAlbums">Your Albums</a></li>
+                <li><a class="nav-link {% if request.path.startswith('/friends') %}is-active{% endif %}" href="/friends">Friends</a></li>
+            {% endif %}
+        </ul>
+    </div>
+    <a class="navbar__search" href="/photosearch" aria-label="Search photos">
+        <span class="navbar__search-icon" aria-hidden="true"></span>
+        <span>Search photos</span>
+    </a>
     <div class="navbar__actions">
         {% if current_user.is_authenticated %}
             <a class="button button--secondary" href="/upload">Upload</a>
@@ -19,4 +27,26 @@
             <a class="button" href="/login">Log In</a>
         {% endif %}
     </div>
+    <details class="navbar__menu">
+        <summary aria-label="Open navigation">
+            <span></span>
+            <span></span>
+            <span></span>
+        </summary>
+        <div class="navbar__drawer">
+            <a class="nav-link {% if request.path == '/' %}is-active{% endif %}" href="/">Home</a>
+            <a class="nav-link {% if request.path.startswith('/albums') %}is-active{% endif %}" href="/albums">Albums</a>
+            <a class="nav-link {% if request.path.startswith('/photosearch') %}is-active{% endif %}" href="/photosearch">Search</a>
+            <a class="nav-link {% if request.path.startswith('/leaderboard') %}is-active{% endif %}" href="/leaderboard">Leaderboard</a>
+            {% if current_user.is_authenticated %}
+                <a class="nav-link {% if request.path.startswith('/userAlbums') %}is-active{% endif %}" href="/userAlbums">Your Albums</a>
+                <a class="nav-link {% if request.path.startswith('/friends') %}is-active{% endif %}" href="/friends">Friends</a>
+                <a class="button button--secondary" href="/upload">Upload</a>
+                <a class="button" href="/logout">Log Out</a>
+            {% else %}
+                <a class="button button--secondary" href="/register">Register</a>
+                <a class="button" href="/login">Log In</a>
+            {% endif %}
+        </div>
+    </details>
 </nav>

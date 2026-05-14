@@ -15,6 +15,12 @@
             <h1>{{ current_photo[2] or "Untitled photo" }}</h1>
             <div class="action-row">
                 <a class="button button--secondary" href="/albums/photo/{{ current_photo[1] }}/likes">Likes - {{ totalLikes or 0 }}</a>
+                {% if manage_album_id %}
+                    <form action="{{ url_for('delete_photo', subpath=manage_album_id) }}" method="post">
+                        <input type="hidden" name="picture_id" value="{{ current_photo[1] }}">
+                        <button class="button--danger" type="submit" name="delete_button">Delete Photo</button>
+                    </form>
+                {% endif %}
                 {% if liked %}
                     <form action="{{ url_for('add_unlike', subpath='photo') }}" method="post">
                         <input type="hidden" name="picture_id" value="{{ current_photo[1] }}">

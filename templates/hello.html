@@ -4,20 +4,20 @@
 {% block title %}PhotoShare{% endblock %}
 
 {% block content %}
-<header class="page-header">
+<header class="page-header page-header--hero">
+    <img class="hero-mascot" src="{{ url_for('static', filename='photoshare-logo.svg') }}" alt="PhotoShare logo">
     <div>
-        <p class="eyebrow">PhotoShare</p>
         {% if name %}
-            <h1>Hello {{ name }}</h1>
+            <h1>Hello {{ name }}.</h1>
         {% else %}
             <h1>Share albums, discover photos, and keep up with friends.</h1>
         {% endif %}
-        {% if message %}
-            <p class="page-subtitle">{{ message }}</p>
-        {% else %}
-            <p class="page-subtitle">Browse public albums, search by tags, or sign in to upload and manage your own collection.</p>
-        {% endif %}
     </div>
+    {% if message %}
+        <p class="page-subtitle">{{ message }}</p>
+    {% else %}
+        <p class="page-subtitle">Browse public albums, search by tags, or sign in to upload and manage your own collection.</p>
+    {% endif %}
     <div class="page-actions">
         {% if current_user.is_authenticated %}
             <a class="button" href="/upload">Upload Photo</a>
@@ -29,9 +29,10 @@
     </div>
 </header>
 
-<div class="dashboard-grid">
-    <section class="panel">
+<div class="dashboard-grid home-overview">
+    <section class="section-stack">
         <h2>Start Here</h2>
+        <p class="page-subtitle">Upload photos, group them into albums, tag the moments you want to find later, and share them with friends.</p>
         <div class="quick-links">
             <a class="quick-link" href="/albums">Browse Albums <span>Explore the shared gallery.</span></a>
             <a class="quick-link" href="/photosearch">Photo Search <span>Find photos by one or more tags.</span></a>
@@ -40,6 +41,17 @@
         </div>
     </section>
 
+    <aside class="photo-summary-card" aria-label="PhotoShare highlights">
+        <h2>Made for shared photo libraries.</h2>
+        <ul class="feature-list">
+            <li>Create albums for trips, events, and everyday collections.</li>
+            <li>Add searchable tags while uploading each photo.</li>
+            <li>Collect likes, comments, and recommendations from friends.</li>
+        </ul>
+    </aside>
+</div>
+
+<div class="dashboard-grid">
     {% if current_user.is_authenticated %}
         <aside class="panel">
             <h2>Your Workspace</h2>

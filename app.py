@@ -452,6 +452,23 @@ def current_user_owns_photo(picture_id):
 	photo_owner = cursor.fetchone()
 	return bool(photo_owner and photo_owner[0] == getUserIdFromEmail(flask_login.current_user.id))
 
+def get_manage_album_id_for_photo(picture_id):
+	if not flask_login.current_user.is_authenticated:
+		return None
+	cursor = conn.cursor()
+	cursor.execute(
+		"""
+		SELECT Contains.album_id
+		FROM Contains
+		JOIN Albums ON Contains.album_id = Albums.album_id
+		WHERE Contains.picture_id = %s AND Albums.user_id = %s
+		LIMIT 1
+		""",
+		(picture_id, getUserIdFromEmail(flask_login.current_user.id))
+	)
+	album = cursor.fetchone()
+	return album[0] if album else None
+
 def create_photo_comment(picture_id, comment_text):
 	comment_text = (comment_text or '').strip()
 	if not comment_text:
@@ -483,8 +500,11 @@ def render_photo_detail(picture_id):
 	}
 
 	if flask_login.current_user.is_authenticated:
-		context['notsame'] = not current_user_owns_photo(picture_id)
+		user_owns_photo = current_user_owns_photo(picture_id)
+		context['notsame'] = not user_owns_photo
 		context['liked'] = current_user_liked_photo(picture_id)
+		if user_owns_photo:
+			context['manage_album_id'] = get_manage_album_id_for_photo(picture_id)
 		return render_template('photo.html', **context)
 
 	return render_template('photovisitor.html', **context)
@@ -606,9 +626,11 @@ def modifyPictures(subpath):
 @flask_login.login_required
 def delete_photo(subpath):
 	pid = request.form.get('picture_id')
+	if not current_user_owns_photo(pid):
+		return render_template('unauth.html')
 	cursor = conn.cursor()
-	cursor.execute("DELETE FROM Has WHERE picture_id = '{0}'".format(pid))
 	cursor.execute("DELETE FROM Comments WHERE comment_id IN (SELECT comment_id FROM Has WHERE picture_id = '{0}')".format(pid))
+	cursor.execute("DELETE FROM Has WHERE picture_id = '{0}'".format(pid))
 	cursor.execute("DELETE FROM Likes WHERE picture_id = '{0}'".format(pid))
 	cursor.execute("DELETE FROM Associate WHERE picture_id = '{0}'".format(pid))
 	cursor.execute("DELETE FROM Contains WHERE picture_id = '{0}'".format(pid))
