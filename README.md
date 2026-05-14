@@ -33,59 +33,26 @@ Live GitHub Pages preview: https://kevkim12.github.io/portfolio/photoshare-live/
 
 ## Screenshots
 
-The screenshots below are generated from the local SQLite demo database.
+The screenshots below are generated from the local SQLite demo database. For a broader tour, open the live GitHub Pages preview linked above.
 
-### Public Pages
-
-| Redesigned public home | Log in |
-| --- | --- |
-| ![PhotoShare public home page](docs/screenshots/01-home-public.png) | ![PhotoShare login page](docs/screenshots/02-login.png) |
-
-| Create account | Browse albums |
-| --- | --- |
-| ![PhotoShare registration page](docs/screenshots/03-register.png) | ![PhotoShare public albums page](docs/screenshots/04-albums.png) |
-
-| Album photos | Public photo detail |
-| --- | --- |
-| ![PhotoShare album photo grid](docs/screenshots/05-album-photos.png) | ![PhotoShare public photo detail page](docs/screenshots/06-public-photo-detail.png) |
-
-| Photo search | Comment search |
-| --- | --- |
-| ![PhotoShare tag search form](docs/screenshots/07-photo-search.png) | ![PhotoShare comment search form](docs/screenshots/08-comment-search.png) |
-
-| Leaderboard | Tag search results |
-| --- | --- |
-| ![PhotoShare leaderboard page](docs/screenshots/09-leaderboard.png) | ![PhotoShare tag search results](docs/screenshots/10-photo-search-results.png) |
-
-| Comment search results |
-| --- |
-| ![PhotoShare comment search results](docs/screenshots/11-comment-search-results.png) |
-
-### Signed-in Pages
-
-| Profile dashboard | Upload photo |
-| --- | --- |
-| ![Signed-in PhotoShare profile dashboard](docs/screenshots/12-profile-kevin.png) | ![PhotoShare upload form](docs/screenshots/13-upload.png) |
-
-| Your albums | Manage photos |
-| --- | --- |
-| ![PhotoShare user albums page](docs/screenshots/14-your-albums.png) | ![PhotoShare manage photos page](docs/screenshots/15-manage-photos.png) |
-
-| Manage albums | Friends |
-| --- | --- |
-| ![PhotoShare manage albums page](docs/screenshots/16-manage-albums.png) | ![PhotoShare friends page](docs/screenshots/17-friends.png) |
-
-| Friend recommendations | Photo recommendations |
-| --- | --- |
-| ![PhotoShare friend recommendations page](docs/screenshots/18-friend-recommendations.png) | ![PhotoShare photo recommendations page](docs/screenshots/19-photo-recommendations.png) |
-
-| Tag page | Logged-in photo detail |
-| --- | --- |
-| ![PhotoShare tag page](docs/screenshots/20-tag-page.png) | ![Logged-in PhotoShare photo detail page with delete action](docs/screenshots/21-logged-in-photo-detail.png) |
-
-| Likes | Your tag photos |
-| --- | --- |
-| ![PhotoShare likes page](docs/screenshots/22-likes.png) | ![PhotoShare current user tag photos page](docs/screenshots/23-your-tag-photos.png) |
+<table>
+  <tr>
+    <td align="center"><strong>Redesigned Home</strong></td>
+    <td align="center"><strong>Album Photos</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/01-home-public.png" alt="PhotoShare public home page" width="420"></td>
+    <td><img src="docs/screenshots/05-album-photos.png" alt="PhotoShare album photo grid" width="420"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Tag Search</strong></td>
+    <td align="center"><strong>Upload Flow</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/10-photo-search-results.png" alt="PhotoShare tag search results" width="420"></td>
+    <td><img src="docs/screenshots/13-upload.png" alt="PhotoShare upload form" width="420"></td>
+  </tr>
+</table>
 
 ## Setup
 
