@@ -41,16 +41,16 @@ The screenshots below are generated from the local SQLite demo database. For a b
     <td align="center"><strong>Album Photos</strong></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/01-home-public.png" alt="PhotoShare public home page" width="420"></td>
-    <td><img src="docs/screenshots/05-album-photos.png" alt="PhotoShare album photo grid" width="420"></td>
+    <td><img src="docs/readme/home.png" alt="PhotoShare public home page" width="420" height="236"></td>
+    <td><img src="docs/readme/album-photos.png" alt="PhotoShare album photo grid" width="420" height="236"></td>
   </tr>
   <tr>
     <td align="center"><strong>Tag Search</strong></td>
     <td align="center"><strong>Upload Flow</strong></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/10-photo-search-results.png" alt="PhotoShare tag search results" width="420"></td>
-    <td><img src="docs/screenshots/13-upload.png" alt="PhotoShare upload form" width="420"></td>
+    <td><img src="docs/readme/tag-search.png" alt="PhotoShare tag search results" width="420" height="236"></td>
+    <td><img src="docs/readme/upload.png" alt="PhotoShare upload form" width="420" height="236"></td>
   </tr>
 </table>
 
