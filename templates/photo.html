@@ -18,7 +18,15 @@
                 {% if manage_album_id %}
                     <form action="{{ url_for('delete_photo', subpath=manage_album_id) }}" method="post">
                         <input type="hidden" name="picture_id" value="{{ current_photo[1] }}">
-                        <button class="button--danger" type="submit" name="delete_button">Delete Photo</button>
+                        <button class="button--danger button--icon" type="submit" name="delete_button" aria-label="Delete photo">
+                            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3 6h18" />
+                                <path d="M8 6V4h8v2" />
+                                <path d="M6 6l1 14h10l1-14" />
+                                <path d="M10 10v6" />
+                                <path d="M14 10v6" />
+                            </svg>
+                        </button>
                     </form>
                 {% endif %}
                 {% if liked %}

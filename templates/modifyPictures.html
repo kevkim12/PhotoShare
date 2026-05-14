@@ -14,15 +14,23 @@
 {% if photos %}
     <div class="photo-grid">
         {% for photo in photos %}
-            <article class="photo-card">
+            <article class="photo-card photo-card--manage">
                 <div class="photo-card__image">
                     <img src="{{ photo[0]|photo_data_uri }}" alt="{{ photo[2] or 'Shared photo' }}">
                 </div>
                 <div class="photo-card__body">
                     <p>{{ photo[2] or "Untitled photo" }}</p>
-                    <form action="{{ url_for('delete_photo', subpath=album_id) }}" method="post">
+                    <form class="photo-card__actions" action="{{ url_for('delete_photo', subpath=album_id) }}" method="post">
                         <input type="hidden" name="picture_id" value="{{ photo[1] }}">
-                        <button class="button--danger" type="submit" name="delete_button">Delete Photo</button>
+                        <button class="button--danger button--icon" type="submit" name="delete_button" aria-label="Delete {{ photo[2] or 'photo' }}">
+                            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3 6h18" />
+                                <path d="M8 6V4h8v2" />
+                                <path d="M6 6l1 14h10l1-14" />
+                                <path d="M10 10v6" />
+                                <path d="M14 10v6" />
+                            </svg>
+                        </button>
                     </form>
                 </div>
             </article>

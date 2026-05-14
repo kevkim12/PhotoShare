@@ -31,13 +31,59 @@ The app includes a polished responsive interface with shared templates, reusable
 
 ## Screenshots
 
-| Public home | Photo detail |
-| --- | --- |
-| ![PhotoShare public home page](docs/screenshots/01-home-public.png) | ![Logged-in photo detail page with tags and comments](docs/screenshots/21-logged-in-photo-detail.png) |
+The screenshots below are generated from the local SQLite demo database.
 
-| Tag search | Profile dashboard |
+### Public Pages
+
+| Public home | Log in |
 | --- | --- |
-| ![Tag search results for travel photos](docs/screenshots/10-photo-search-results.png) | ![Signed-in profile dashboard](docs/screenshots/12-profile-kevin.png) |
+| ![PhotoShare public home page](docs/screenshots/01-home-public.png) | ![PhotoShare login page](docs/screenshots/02-login.png) |
+
+| Create account | Browse albums |
+| --- | --- |
+| ![PhotoShare registration page](docs/screenshots/03-register.png) | ![PhotoShare public albums page](docs/screenshots/04-albums.png) |
+
+| Album photos | Public photo detail |
+| --- | --- |
+| ![PhotoShare album photo grid](docs/screenshots/05-album-photos.png) | ![PhotoShare public photo detail page](docs/screenshots/06-public-photo-detail.png) |
+
+| Photo search | Comment search |
+| --- | --- |
+| ![PhotoShare tag search form](docs/screenshots/07-photo-search.png) | ![PhotoShare comment search form](docs/screenshots/08-comment-search.png) |
+
+| Leaderboard | Tag search results |
+| --- | --- |
+| ![PhotoShare leaderboard page](docs/screenshots/09-leaderboard.png) | ![PhotoShare tag search results](docs/screenshots/10-photo-search-results.png) |
+
+| Comment search results |
+| --- |
+| ![PhotoShare comment search results](docs/screenshots/11-comment-search-results.png) |
+
+### Signed-in Pages
+
+| Profile dashboard | Upload photo |
+| --- | --- |
+| ![Signed-in PhotoShare profile dashboard](docs/screenshots/12-profile-kevin.png) | ![PhotoShare upload form](docs/screenshots/13-upload.png) |
+
+| Your albums | Manage photos |
+| --- | --- |
+| ![PhotoShare user albums page](docs/screenshots/14-your-albums.png) | ![PhotoShare manage photos page](docs/screenshots/15-manage-photos.png) |
+
+| Manage albums | Friends |
+| --- | --- |
+| ![PhotoShare manage albums page](docs/screenshots/16-manage-albums.png) | ![PhotoShare friends page](docs/screenshots/17-friends.png) |
+
+| Friend recommendations | Photo recommendations |
+| --- | --- |
+| ![PhotoShare friend recommendations page](docs/screenshots/18-friend-recommendations.png) | ![PhotoShare photo recommendations page](docs/screenshots/19-photo-recommendations.png) |
+
+| Tag page | Logged-in photo detail |
+| --- | --- |
+| ![PhotoShare tag page](docs/screenshots/20-tag-page.png) | ![Logged-in PhotoShare photo detail page with delete action](docs/screenshots/21-logged-in-photo-detail.png) |
+
+| Likes | Your tag photos |
+| --- | --- |
+| ![PhotoShare likes page](docs/screenshots/22-likes.png) | ![PhotoShare current user tag photos page](docs/screenshots/23-your-tag-photos.png) |
 
 ## Setup
 
