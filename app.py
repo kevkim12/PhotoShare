@@ -17,7 +17,7 @@ import flask
 from flask import Flask, g, request, render_template
 from flaskext.mysql import MySQL
 import flask_login
-from pymysql.err import OperationalError as DatabaseOperationalError
+from pymysql.err import MySQLError, OperationalError as DatabaseOperationalError
 import re
 
 #for getting current date
@@ -327,7 +327,7 @@ def login():
 @app.route('/logout')
 def logout():
 	flask_login.logout_user()
-	return render_template('hello.html', message='Logged out')
+	return render_homepage(message='Logged out')
 
 @login_manager.unauthorized_handler
 def unauthorized_handler():
@@ -371,7 +371,7 @@ def register_user():
 		user.id = email
 		flask_login.login_user(user)
 		login_status = True
-		return render_template('hello.html', name=firstname, message='Account Created!')
+		return render_homepage(name=firstname, message='Account Created!')
 	else:
 		print("couldn't find all tokens")
 		print('oof')
@@ -411,12 +411,60 @@ def isEmailUnique(email):
 		return False
 	else:
 		return True
+
+def get_homepage_context():
+	context = {
+		'home_stats': [],
+		'popular_tags': [],
+		'recent_photos': []
+	}
+
+	try:
+		home_cursor = conn.cursor()
+		stat_queries = (
+			('Photos', 'SELECT COUNT(*) FROM Pictures'),
+			('Albums', 'SELECT COUNT(*) FROM Albums'),
+			('Tags', 'SELECT COUNT(*) FROM Tag'),
+			('Comments', 'SELECT COUNT(*) FROM Comments')
+		)
+		stats = []
+		for label, query in stat_queries:
+			home_cursor.execute(query)
+			result = home_cursor.fetchone()
+			stats.append({'label': label, 'value': result[0] if result else 0})
+		context['home_stats'] = stats
+
+		home_cursor.execute(
+			"SELECT Tag.word, COUNT(*) AS count "
+			"FROM Tag JOIN Associate ON Tag.word = Associate.word "
+			"GROUP BY Tag.word ORDER BY count DESC LIMIT 6"
+		)
+		context['popular_tags'] = [
+			{'word': row[0], 'count': row[1]} for row in home_cursor.fetchall()
+		]
+
+		home_cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures ORDER BY picture_id DESC LIMIT 6")
+		context['recent_photos'] = home_cursor.fetchall()
+	except (MySQLError, sqlite3.Error):
+		pass
+
+	return context
+
+def render_homepage(**template_context):
+	context = get_homepage_context()
+	context.update(template_context)
+	return render_template('hello.html', **context)
 #end login code
 
 @app.route('/profile')
 @flask_login.login_required
 def protected():
-	return render_template('hello.html', name=getDisplayNameFromEmail(flask_login.current_user.id), message="Here's your profile")
+	user_id = getUserIdFromEmail(flask_login.current_user.id)
+	return render_homepage(
+		name=getDisplayNameFromEmail(flask_login.current_user.id),
+		message="Here's your profile",
+		photos=getUsersPhotos(user_id)
+	)
 
 def get_photo_comments(picture_id):
 	cursor = conn.cursor()
@@ -884,7 +932,7 @@ def display_photoRecs():
 #default page
 @app.route("/", methods=['GET'])
 def hello():
-	return render_template('hello.html', message='Welcome to PhotoShare')
+	return render_homepage(message='Welcome to PhotoShare')
 
 @app.route("/utils/test.html", methods=['GET'])
 def test():

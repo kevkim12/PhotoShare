@@ -4,74 +4,226 @@
 {% block title %}PhotoShare{% endblock %}
 
 {% block content %}
-<header class="page-header page-header--hero">
-    <img class="hero-mascot" src="{{ url_for('static', filename='photoshare-logo.svg') }}" alt="PhotoShare logo">
-    <div>
+<header class="page-header page-header--hero home-hero">
+    <div class="hero-copy">
+        <img class="hero-mascot" src="{{ url_for('static', filename='photoshare-logo.svg') }}" alt="PhotoShare logo">
+        <p class="eyebrow">PhotoShare</p>
         {% if name %}
-            <h1>Hello {{ name }}.</h1>
+            <h1>Hello {{ name }}. Your photo library is ready for its next story.</h1>
         {% else %}
-            <h1>Share albums, discover photos, and keep up with friends.</h1>
+            <h1>Turn everyday moments into albums people want to explore.</h1>
         {% endif %}
-    </div>
-    {% if message %}
-        <p class="page-subtitle">{{ message }}</p>
-    {% else %}
-        <p class="page-subtitle">Browse public albums, search by tags, or sign in to upload and manage your own collection.</p>
-    {% endif %}
-    <div class="page-actions">
-        {% if current_user.is_authenticated %}
-            <a class="button" href="/upload">Upload Photo</a>
-            <a class="button button--secondary" href="/userAlbums">Your Albums</a>
-        {% else %}
-            <a class="button" href="/login">Log In</a>
-            <a class="button button--secondary" href="/register">Create Account</a>
+        <p class="page-subtitle">Build albums, tag the details, follow friends, and discover the photos your community is already sharing.</p>
+        {% if message %}
+            <p class="hero-note">{{ message }}</p>
         {% endif %}
+        <div class="page-actions">
+            {% if current_user.is_authenticated %}
+                <a class="button" href="/upload">Upload Photo</a>
+                <a class="button button--secondary" href="/userAlbums">Your Albums</a>
+            {% else %}
+                <a class="button" href="/register">Create Account</a>
+                <a class="button button--secondary" href="/albums">Browse Albums</a>
+            {% endif %}
+        </div>
     </div>
+
+    <aside class="home-visual" aria-label="PhotoShare gallery preview">
+        <div class="home-visual__header">
+            <span>Community Gallery</span>
+            <span class="home-visual__status">Live</span>
+        </div>
+        <div class="home-visual__grid">
+            {% if recent_photos %}
+                {% for photo in recent_photos[:4] %}
+                    <a class="home-visual__tile" href="/albums/photo/{{ photo[1] }}">
+                        <img src="{{ photo[0]|photo_data_uri }}" alt="{{ photo[2] or 'Shared photo' }}">
+                    </a>
+                {% endfor %}
+            {% else %}
+                <span class="home-visual__tile home-visual__tile--sunset">Trips</span>
+                <span class="home-visual__tile home-visual__tile--forest">Friends</span>
+                <span class="home-visual__tile home-visual__tile--blue">Food</span>
+                <span class="home-visual__tile home-visual__tile--rose">Family</span>
+            {% endif %}
+        </div>
+        <div class="home-visual__footer">
+            <div>
+                <strong>Albums that feel alive</strong>
+                <span>captions, likes, comments, tags</span>
+            </div>
+            <a href="/photosearch">Search</a>
+        </div>
+    </aside>
 </header>
 
-<div class="dashboard-grid home-overview">
-    <section class="section-stack">
-        <h2>Start Here</h2>
-        <p class="page-subtitle">Upload photos, group them into albums, tag the moments you want to find later, and share them with friends.</p>
-        <div class="quick-links">
-            <a class="quick-link" href="/albums">Browse Albums <span>Explore the shared gallery.</span></a>
-            <a class="quick-link" href="/photosearch">Photo Search <span>Find photos by one or more tags.</span></a>
-            <a class="quick-link" href="/comments">Comment Search <span>See who is talking about a topic.</span></a>
-            <a class="quick-link" href="/leaderboard">Leaderboard <span>View top contributors and tags.</span></a>
-        </div>
+{% if home_stats %}
+    <section class="home-stats" aria-label="PhotoShare activity">
+        {% for stat in home_stats %}
+            <div class="home-stat">
+                <strong>{{ stat.value }}</strong>
+                <span>{{ stat.label }}</span>
+            </div>
+        {% endfor %}
     </section>
+{% endif %}
 
-    <aside class="photo-summary-card" aria-label="PhotoShare highlights">
-        <h2>Made for shared photo libraries.</h2>
+<section class="section-stack home-section" aria-labelledby="discover-title">
+    <div class="section-intro">
+        <p class="eyebrow">Discover</p>
+        <h2 id="discover-title">A home base for every photo workflow.</h2>
+        <p class="page-subtitle">PhotoShare gives casual browsing, personal organization, and community discovery equal room to breathe.</p>
+    </div>
+    <div class="home-feature-grid">
+        <a class="home-feature" href="/albums">
+            <span class="home-feature__icon home-feature__icon--albums" aria-hidden="true"></span>
+            <strong>Browse albums</strong>
+            <span>Open shared collections and jump straight into photo detail pages.</span>
+        </a>
+        <a class="home-feature" href="/photosearch">
+            <span class="home-feature__icon home-feature__icon--search" aria-hidden="true"></span>
+            <strong>Search by tags</strong>
+            <span>Find connected moments across albums with one or more tags.</span>
+        </a>
+        <a class="home-feature" href="/comments">
+            <span class="home-feature__icon home-feature__icon--comments" aria-hidden="true"></span>
+            <strong>Follow conversations</strong>
+            <span>See which users are talking about the topics you care about.</span>
+        </a>
+        <a class="home-feature" href="/leaderboard">
+            <span class="home-feature__icon home-feature__icon--leaderboard" aria-hidden="true"></span>
+            <strong>Track activity</strong>
+            <span>Spot top contributors and the tags shaping the gallery.</span>
+        </a>
+    </div>
+</section>
+
+<section class="dashboard-grid home-overview">
+    <div class="section-stack">
+        <div class="section-intro">
+            <p class="eyebrow">Momentum</p>
+            <h2>From upload to discovery in a few clean steps.</h2>
+            <p class="page-subtitle">A caption gives each photo context. Tags make it findable. Likes and comments keep the album moving.</p>
+        </div>
+        <div class="home-flow">
+            <div class="home-flow__step">
+                <span>01</span>
+                <strong>Upload</strong>
+                <p>Add a photo to one of your albums with a caption.</p>
+            </div>
+            <div class="home-flow__step">
+                <span>02</span>
+                <strong>Tag</strong>
+                <p>Attach searchable words for places, people, and moods.</p>
+            </div>
+            <div class="home-flow__step">
+                <span>03</span>
+                <strong>Share</strong>
+                <p>Let friends find it, like it, and keep the conversation going.</p>
+            </div>
+        </div>
+    </div>
+
+    <aside class="photo-summary-card home-highlight" aria-label="PhotoShare highlights">
+        <h2>Designed for shared memories.</h2>
         <ul class="feature-list">
-            <li>Create albums for trips, events, and everyday collections.</li>
-            <li>Add searchable tags while uploading each photo.</li>
-            <li>Collect likes, comments, and recommendations from friends.</li>
+            <li>Create albums for trips, events, projects, and everyday collections.</li>
+            <li>Use tags to turn a growing gallery into something searchable.</li>
+            <li>Build a friend network and discover photos through recommendations.</li>
         </ul>
     </aside>
-</div>
+</section>
 
-<div class="dashboard-grid">
+<section class="home-tag-section" aria-labelledby="tags-title">
+    <div class="section-intro">
+        <p class="eyebrow">Popular Tags</p>
+        <h2 id="tags-title">Give every photo a way back.</h2>
+    </div>
+    <div class="home-tag-cloud">
+        {% if popular_tags %}
+            {% for tag in popular_tags %}
+                <a class="home-tag" href="/tags/{{ tag.word }}">#{{ tag.word }} <span>{{ tag.count }}</span></a>
+            {% endfor %}
+        {% else %}
+            <span class="home-tag">#travel</span>
+            <span class="home-tag">#friends</span>
+            <span class="home-tag">#food</span>
+            <span class="home-tag">#family</span>
+            <span class="home-tag">#weekend</span>
+        {% endif %}
+    </div>
+</section>
+
+{% if recent_photos %}
+    <section class="section-stack home-section">
+        <div class="section-intro">
+            <p class="eyebrow">Fresh Finds</p>
+            <h2>New in the gallery.</h2>
+            <p class="page-subtitle">Recent uploads give visitors a reason to keep exploring.</p>
+        </div>
+        {{ photo_grid(recent_photos) }}
+    </section>
+{% else %}
+    <section class="home-prompt-band" aria-labelledby="prompt-title">
+        <div>
+            <p class="eyebrow">Make It Yours</p>
+            <h2 id="prompt-title">Start with the moments already on your camera roll.</h2>
+            <p>Weekend trips, team events, family dinners, campus snapshots, and favorite places all become easier to revisit once they have albums and tags.</p>
+        </div>
+        <a class="button" href="{% if current_user.is_authenticated %}/upload{% else %}/register{% endif %}">
+            {% if current_user.is_authenticated %}Upload Photo{% else %}Create Account{% endif %}
+        </a>
+    </section>
+{% endif %}
+
+<section class="dashboard-grid home-workspace">
     {% if current_user.is_authenticated %}
         <aside class="panel">
-            <h2>Your Workspace</h2>
+            <p class="eyebrow">Your Workspace</p>
+            <h2>Keep building your collection.</h2>
             <div class="quick-links">
                 <a class="quick-link" href="/userAlbums">Albums <span>Create and organize albums.</span></a>
                 <a class="quick-link" href="/friends">Friends <span>Manage your network.</span></a>
                 <a class="quick-link" href="/photoRecs">Recommendations <span>Discover photos based on your tags.</span></a>
             </div>
         </aside>
+        <aside class="panel home-next">
+            <p class="eyebrow">Next Up</p>
+            <h2>Small moves, better gallery.</h2>
+            <ul class="feature-list">
+                <li>Add tags to older uploads so search has more to work with.</li>
+                <li>Visit the leaderboard to see what the community is posting.</li>
+                <li>Check recommendations after uploading a few themed photos.</li>
+            </ul>
+        </aside>
     {% else %}
         <aside class="panel">
-            <h2>Join PhotoShare</h2>
-            <p class="page-subtitle">An account lets you create albums, upload photos, add friends, and get recommendations.</p>
+            <p class="eyebrow">Join PhotoShare</p>
+            <h2>Your albums, friends, and recommendations in one place.</h2>
+            <p class="page-subtitle">An account unlocks uploads, album management, friend lists, likes, comments, and personalized discovery.</p>
+            <div class="page-actions">
+                <a class="button" href="/register">Create Account</a>
+                <a class="button button--secondary" href="/login">Log In</a>
+            </div>
+        </aside>
+        <aside class="panel home-next">
+            <p class="eyebrow">Why Sign In</p>
+            <h2>More than a public gallery.</h2>
+            <ul class="feature-list">
+                <li>Upload photos into albums you control.</li>
+                <li>Build a friend network around shared memories.</li>
+                <li>Get recommendations from the tags you use most.</li>
+            </ul>
         </aside>
     {% endif %}
-</div>
+</section>
 
 {% if photos %}
-    <section class="section-stack">
-        <h2>Your Photos</h2>
+    <section class="section-stack home-section">
+        <div class="section-intro">
+            <p class="eyebrow">Your Photos</p>
+            <h2>Recently added by you.</h2>
+        </div>
         {{ photo_grid(photos) }}
     </section>
 {% endif %}
